@@ -1,9 +1,9 @@
 // Scene 2: a country bus stop in the rainy season (tsuyu). Paddies behind, a farmhouse, cedar hills in mist.
 // Finale: the rain eases, a bus drives out of the base's edge and stops, fireflies rise over the paddies.
 import * as THREE from 'three';
-import { blob, dab, grass, JPG, mottle, poly, rrect, soft, text, wood, type Ctx, type Pen } from '../core/paint';
+import { blob, dab, flowers, foliage, JPG, meadow, mottle, poly, rrect, soft, text, tufts, wood, type Ctx, type Pen } from '../core/paint';
 import { clamp, ease, lerp, mix, pick, rand, rgba, rnd } from '../core/util';
-import { board, boardMat, cutout, cutoutAsset, foldBox, glowing, group, latheMat, memo, plainM, wallNet } from '../kit/kit';
+import { board, boardMat, cutout, cutoutAsset, foldBox, glowing, group, latheMat, memo, plain, plainM, wallNet } from '../kit/kit';
 import type { SceneDef } from './types';
 
 const V3 = THREE.Vector3;
@@ -38,7 +38,7 @@ const forestA = () => cutoutAsset(K('forest'), forestOutline, (c) => {
     for (let i = 0; i < 26; i++) blob(c, rand(-3.2, 3.2), b - 0.05 + rand(-0.05, 0.05), rand(0.12, 0.3), '#e7eeec', 0.18, 0.4);
   });
   const h = c.createLinearGradient(0, 2.4, 0, 0.5); h.addColorStop(0, 'rgba(220,230,232,.4)'); h.addColorStop(1, 'rgba(220,230,232,0)'); c.fillStyle = h; c.fillRect(-3.2, 0, 6.4, 2.6);
-}, { ppu: 170, ink: 0.012 });
+}, { ppu: 170, ink: 0 });
 
 // ── backdrop: thatched farmhouse (minka)
 function minkaOutline(p: Pen) {
@@ -82,7 +82,7 @@ const poleA = () => cutoutAsset(K('pole'), poleOutline, (c) => {
   c.fillStyle = '#f2efe6'; c.fillRect(-0.04, 1.0, 0.08, 0.22); text(c, '川辺', 0, 1.11, 0.055, '#2a2420', { vertical: true });
 }, { ppu: 380 });
 const lampGlow = () => memo(K('lampGlow'), () => glowing(plain2('#f3efe0')));
-const plain2 = (col: string) => new THREE.MeshStandardMaterial({ color: col, roughness: 0.6 });
+const plain2 = (col: string) => plain(col);
 function buildPole() {
   const arm = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.04, 0.42), plainM(K('arm'), '#5f5246')); arm.position.set(0, 2.05, 0.21);
   const shade = new THREE.Mesh(new THREE.ConeGeometry(0.13, 0.08, 18, 1, true), plainM(K('shade'), '#3e4a4f', { side: THREE.DoubleSide })); shade.position.set(0, 2.0, 0.42);
@@ -204,17 +204,19 @@ const hydraA = (key: string, hue: string[], seed: number) => cutoutAsset(K(key),
   for (let i = 0; i <= 60; i++) { const a = -0.25 + ((Math.PI + 0.5) * i) / 60; p.lineTo(Math.cos(a) * r(a) * 1.25, 0.3 + Math.sin(a) * r(a)); }
   p.lineTo(-0.3, 0); p.closePath();
 }, (c) => {
-  c.fillStyle = '#3f6a3e'; c.fillRect(-0.6, 0, 1.2, 0.8);
-  for (let i = 0; i < 40; i++) { const x = rand(-0.45, 0.45), y = rand(0, 0.45); c.fillStyle = pick(['#4f7f45', '#3a6236', '#5f9150']); c.beginPath(); c.ellipse(x, y, 0.07, 0.035, rand(-1, 1), 0, 7); c.fill(); }
+  c.fillStyle = '#35603a'; c.fillRect(-0.6, 0, 1.2, 0.8);
+  foliage(c, -0.5, 0, 1.0, 0.55, { shade: '#2f5a35', mid: '#4f8448', light: '#74a85c', hi: '#a6d27a' }, { n: 26, r: [0.07, 0.12] });
+  // flower heads: balls of florets, lit from the upper left
   [[-0.22, 0.42], [0.05, 0.52], [0.28, 0.4], [-0.05, 0.3], [0.2, 0.22], [-0.3, 0.22]].forEach(([x, y]) => {
     const r = rand(0.11, 0.15);
-    blob(c, x, y, r, hue[2], 1, 0.15);
-    for (let k = 0; k < 40; k++) { const a = rand(0, 6.28), d = Math.sqrt(rnd()) * r; const px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
-      const l = clamp(0.5 + (py - y) / r * 0.4 - (px - x) / r * 0.2, 0, 1); dab(c, px, py, rand(0.014, 0.022), mix(hue[0], hue[1], l)); dab(c, px, py, 0.005, '#fdf8ff', 0.6); }
+    foliage(c, x - r, y - r, 2 * r, 2 * r, { shade: hue[2], mid: mix(hue[0], hue[1], 0.35), light: hue[1], hi: '#ffffff' },
+      { n: 14, r: [r * 0.3, r * 0.5], inside: (px, py) => (px - x) ** 2 + (py - y) ** 2 < r * r * 0.7 });
+    for (let k = 0; k < 10; k++) { const a = rand(0, 6.28), d = Math.sqrt(rnd()) * r * 0.8; const px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
+      c.strokeStyle = mix(hue[2], '#2a2050', 0.3); c.lineWidth = 0.005; c.beginPath(); c.moveTo(px - 0.01, py); c.lineTo(px + 0.01, py); c.moveTo(px, py - 0.01); c.lineTo(px, py + 0.01); c.stroke(); }
   });
 }, { ppu: 520 });
-const buildHydraA = () => group(cutout(hydraA('hydraA', ['#5560b8', '#bcc8f2', '#6a76c8'], 1)));
-const buildHydraB = () => { const o = group(cutout(hydraA('hydraB', ['#9a5ab0', '#efc6ef', '#b06fbe'], 4))); o.scale.setScalar(0.8); return o; };
+const buildHydraA = () => group(cutout(hydraA('hydraA', ['#5a6fd0', '#c6d3fb', '#4a56a8'], 1)));
+const buildHydraB = () => { const o = group(cutout(hydraA('hydraB', ['#a565c0', '#f3cdf3', '#7e4596'], 4))); o.scale.setScalar(0.8); return o; };
 
 // ── people and animals
 function kidOutline(p: Pen) {
@@ -330,9 +332,8 @@ function buildBus() {
 
 // ── ground: paddies at the back, gravel around the shelter, the road with puddles
 function paintGround(c: Ctx, W: number, D: number) {
-  const greens = ['#7fa85a', '#6d9a4c', '#8db466', '#5f8c45'];
-  c.fillStyle = '#7aa556'; c.fillRect(-W / 2, -D / 2, W, D);
-  for (let i = 0; i < 60; i++) blob(c, rand(-W / 2, W / 2), rand(-D / 2, D / 2), rand(0.25, 0.7), pick(greens), 0.35, 0.3);
+  const greens = ['#5f9548', '#73a854', '#93c46a', '#4f8540'];
+  meadow(c, -W / 2, -D / 2, W, D, { base: '#78ad55', light: '#9ccb6c', shade: '#5c8f48', tufts: [] });
   // paddies: flooded fields split by earth ridges (shape y = -world z, so the back is y > 0.75)
   const fields: [number, number, number, number][] = [[-3.1, 0.82, -1.0, 2.4], [-0.9, 0.82, 1.1, 2.4], [1.2, 0.82, 3.1, 1.55]];
   for (const [x0, y0, x1, y1] of fields) {
@@ -363,8 +364,8 @@ function paintGround(c: Ctx, W: number, D: number) {
     c.fillStyle = g; c.beginPath(); c.ellipse(px, -pz, rx, rz, 0, 0, 7); c.fill();
     c.strokeStyle = 'rgba(230,240,245,.5)'; c.lineWidth = 0.01; c.beginPath(); c.ellipse(px - rx * 0.2, -pz + rz * 0.2, rx * 0.5, rz * 0.4, 0, 3.4, 4.6); c.stroke();
   }
-  grass(c, -W / 2, -D / 2, W, D, greens, 6500, (x, y) => (y > 0.78 && !((y > 1.55 && x > 1.1) || (y > 2.38))) || (y > -0.88 && y < 0.53 && x > -1.78 && x < 2.48) || (y > ry0 - 0.1 && y < ry1 + 0.1));
-  for (let i = 0; i < 60; i++) { const x = rand(-3, 3), y = rand(-2.4, -2.0); for (let k = 0; k < 3; k++) dab(c, x + rand(-0.03, 0.03), y + rand(-0.03, 0.03), 0.015, pick(['#ffffff', '#c9d4f2', '#f2e7a8']), 0.9); }
+  tufts(c, -W / 2, -D / 2, W, D, greens, 1600, (x, y) => (y > 0.78 && !((y > 1.55 && x > 1.1) || (y > 2.38))) || (y > -0.88 && y < 0.53 && x > -1.78 && x < 2.48) || (y > ry0 - 0.1 && y < ry1 + 0.1));
+  flowers(c, -3, -2.42, 6, 0.42, ['#ffffff', '#c9d4f2', '#f2e7a8'], 40);
   // wet sheen
   c.fillStyle = 'rgba(40,60,70,.08)'; c.fillRect(-W / 2, -D / 2, W, D);
 }
@@ -379,13 +380,13 @@ export const PRZYSTANEK: SceneDef = {
   seed: 61,
   base: { w: 6.4, d: 5.0, paint: paintGround, grassTop: ['#6d9a4c', '#86b463'] },
   sky: {
-    day: { grad: [[0, '#8fa4b6'], [0.55, '#b9c7d0'], [1, '#e1e6e4']], cloud: '#e9edf0', hi: '#f7f9fa', edge: '#cdd5dc', shadow: '#98a6b4', overcast: 0.1,
+    day: { grad: [[0, '#6f8fae'], [0.5, '#a2b9cc'], [1, '#dfe6e4']], cloud: '#e6ebef', hi: '#f8fafb', edge: '#e6ebef', shadow: '#97a5ba',
       clouds: [[150, 420, 1.0], [620, 300, 1.2], [1050, 480, 0.9], [380, 680, 0.8], [900, 760, 0.85], [600, 900, 0.7]] },
     evening: { grad: [[0, '#151d38'], [0.45, '#2f3d63'], [0.8, '#5d6f93'], [1, '#c99a74']], cloud: '#36425f', hi: '#4b587a', edge: '#303b57', shadow: '#262f49', stars: true,
       clouds: [[150, 420, 1.0], [620, 300, 1.2], [1050, 480, 0.9], [380, 680, 0.8], [900, 760, 0.85], [600, 900, 0.7]] },
   },
   light: {
-    day: { sky: '#dfe7ee', ground: '#6f7a5c', hemi: 1.35, sun: '#eef2f4', sunI: 1.3, sunPos: [3, 9, 4], bloom: 0.1 },
+    day: { sky: '#dfe7ee', ground: '#6f7a5c', hemi: 1.35, sun: '#eef2f4', sunI: 1.3, sunPos: [3, 9, 4], bloom: 0.03 },
     evening: { sky: '#6372a0', ground: '#3a3f3a', hemi: 0.8, sun: '#9fb2d8', sunI: 0.45, sunPos: [-4, 6, 3], bloom: 0.9 },
   },
   steps: [
@@ -422,13 +423,13 @@ export const PRZYSTANEK: SceneDef = {
     });
     const rain = fx.rainy!; rain.intensity = 0.65;
     const lamp = new THREE.PointLight('#ffd9a0', 0, 5, 1.4); lamp.position.set(-2.45, 1.9, 0.97);
-    const vendLight = new THREE.PointLight('#cfe6ff', 0, 2.5, 1.6); vendLight.position.set(1.35, 0.8, 0.35);
+    const vendLight = new THREE.PointLight('#cfe6ff', 0, 2.5, 1.6); vendLight.position.set(1.35, 0.8, 0.6);
     const head = new THREE.SpotLight('#fff1c8', 0, 6, 0.5, 0.6, 1.2);
     const bus = buildBus(); bus.visible = false;
     // the bus drives out of the base's left edge and away over the right one: clip it to the base
     const clip = [new THREE.Plane(new V3(1, 0, 0), 3.2), new THREE.Plane(new V3(-1, 0, 0), 3.2)];
     bus.traverse((m) => { const mm = m as THREE.Mesh; if (mm.isMesh) (Array.isArray(mm.material) ? mm.material : [mm.material]).forEach((x) => { x.clippingPlanes = clip; }); });
-    head.position.set(1.1, 0.45, 0); head.target.position.set(4, 0, 0); bus.add(head, head.target);
+    head.position.set(1.4, 0.45, 0); head.target.position.set(4, 0, 0); bus.add(head, head.target);
     scene.add(lamp, vendLight, bus);
     const fire = fx.emitter(0, () => fx.firefly(new V3(rand(-3, 3), rand(0.25, 0.9), rand(-2.2, -0.9))));
     const STOP_X = 0.95, FROM = -5.4, TO = 5.6, LANE = ROAD0 + 0.32;
@@ -445,8 +446,8 @@ export const PRZYSTANEK: SceneDef = {
         const e = c.evening;
         lampGlow().emissiveIntensity = (c.placed.has('pole') ? e : 0) * 3;
         lamp.intensity = (c.placed.has('pole') ? e : 0) * 7;
-        vendFront().emissiveIntensity = e * 0.55;
-        vendLight.intensity = (c.placed.has('vend') ? e : 0) * 1.6;
+        vendFront().emissiveIntensity = e * 0.32;
+        vendLight.intensity = (c.placed.has('vend') ? e : 0) * 0.7;
         minkaA().mat.emissiveIntensity = e * 2;
         busSide('busSideA', false).emissiveIntensity = busSide('busSideB', true).emissiveIntensity = e * 1.1;
         busFront().emissiveIntensity = e * 1.5; head.intensity = bus.visible ? e * 12 : 0;

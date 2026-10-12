@@ -70,7 +70,7 @@ export function mottle(c: Ctx, x0: number, y0: number, w: number, h: number, col
   for (let i = 0; i < n; i++) blob(c, x0 + rnd() * w, y0 + rnd() * h, rand(r[0], r[1]), pick(cols), a);
 }
 /** Paper grain on the finished pixels. */
-export function grain(cv: HTMLCanvasElement, amt = 9) {
+export function grain(cv: HTMLCanvasElement, amt = 3.5) {
   const c = cv.getContext('2d')!;
   const im = c.getImageData(0, 0, cv.width, cv.height), d = im.data;
   for (let i = 0; i < d.length; i += 4) {
@@ -200,6 +200,65 @@ export function clumps(c: Ctx, fy: (x: number) => number, x0: number, x1: number
   }
 }
 
+// ── anime-style brushes: a few flat tones with crisp edges instead of noise
+
+export interface Tones { shade: string; mid: string; light: string; hi: string }
+/**
+ * A foliage crown (or a cloud of blossoms, a bush) as layered puffs, lit from the upper left:
+ * the whole silhouette in the shade tone, the mid tone shifted up-left inside it, light tone on the lit side, a few highlights.
+ * `inside(x, y)` limits where puffs may sit; puffs are spread over the bounding box (x0, y0, w, h), y up.
+ */
+export function foliage(c: Ctx, x0: number, y0: number, w: number, h: number, t: Tones,
+  { n = 40, r = [0.12, 0.22], inside, light = [-0.6, 0.8] }: { n?: number; r?: number[]; inside?: (x: number, y: number) => boolean; light?: number[] } = {}) {
+  const puffs: number[][] = [];
+  for (let i = 0, guard = 0; i < n && guard < n * 20; guard++) {
+    const x = x0 + rnd() * w, y = y0 + rnd() * h;
+    if (inside && !inside(x, y)) continue;
+    puffs.push([x, y, rand(r[0], r[1])]); i++;
+  }
+  puffs.sort((a, b) => a[1] - b[1]); // lower puffs first, upper ones overlap them (y up)
+  const [lx, ly] = light, cx = x0 + w / 2, cy = y0 + h / 2;
+  for (const [x, y, rr] of puffs) {
+    blob(c, x, y, rr * 1.05, t.shade, 1, 0.14);
+    blob(c, x + lx * rr * 0.22, y + ly * rr * 0.22, rr * 0.82, t.mid, 1, 0.14);
+    // the lit side of the crown gets the light tone
+    const lit = ((x - cx) * lx + (y - cy) * ly) / (Math.hypot(w, h) * 0.5) + rand(-0.25, 0.35);
+    if (lit > 0.05) blob(c, x + lx * rr * 0.42, y + ly * rr * 0.42, rr * 0.5, t.light, 1, 0.18);
+    if (lit > 0.35) for (let k = 0; k < 3; k++) dab(c, x + lx * rr * rand(0.4, 0.7) + rand(-0.3, 0.3) * rr, y + ly * rr * rand(0.4, 0.7) + rand(-0.3, 0.3) * rr, rr * rand(0.06, 0.12), t.hi, 0.95);
+  }
+}
+/** Grass drawn as small tufts of 3–5 curved blades (dark at the root side, lighter on top). */
+export function tufts(c: Ctx, x0: number, y0: number, w: number, h: number, cols: string[], n: number, skip?: (x: number, y: number) => boolean, size = 1) {
+  c.lineCap = 'round';
+  for (let i = 0; i < n; i++) {
+    const x = x0 + rnd() * w, y = y0 + rnd() * h;
+    if (skip?.(x, y)) continue;
+    const k = 3 + Math.floor(rnd() * 3), col = pick(cols);
+    for (let b = 0; b < k; b++) {
+      const lean = (b - (k - 1) / 2) * 0.012 * size + rand(-0.006, 0.006), len = rand(0.035, 0.07) * size;
+      c.strokeStyle = b === 0 ? mix(col, '#1f3a1a', 0.25) : col; c.lineWidth = rand(0.008, 0.013) * size;
+      c.beginPath(); c.moveTo(x + b * 0.006 * size, y); c.quadraticCurveTo(x + lean * 0.4, y + len * 0.6, x + lean * 2.2, y + len); c.stroke();
+    }
+  }
+}
+/** Meadow: a base green with crisp lit and shaded patches, then tufts. */
+export function meadow(c: Ctx, x0: number, y0: number, w: number, h: number,
+  pal: { base: string; light: string; shade: string; tufts: string[] }, skip?: (x: number, y: number) => boolean, density = 1) {
+  c.fillStyle = pal.base; c.fillRect(x0, y0, w, h);
+  for (let i = 0; i < 16; i++) blob(c, x0 + rnd() * w, y0 + rnd() * h, rand(0.35, 0.8), pal.shade, 0.45, 0.4);
+  for (let i = 0; i < 22; i++) blob(c, x0 + rnd() * w, y0 + rnd() * h, rand(0.25, 0.6), pal.light, 0.55, 0.4);
+  if (pal.tufts.length) tufts(c, x0, y0, w, h, pal.tufts, Math.round(1500 * density), skip);
+}
+/** Flower clusters on grass. */
+export function flowers(c: Ctx, x0: number, y0: number, w: number, h: number, cols: string[], n: number, skip?: (x: number, y: number) => boolean) {
+  for (let i = 0; i < n; i++) {
+    const x = x0 + rnd() * w, y = y0 + rnd() * h;
+    if (skip?.(x, y)) continue;
+    const col = pick(cols);
+    for (let k = 0; k < 4; k++) { const px = x + rand(-0.04, 0.04), py = y + rand(-0.03, 0.03); dab(c, px, py, 0.016, mix(col, '#5a4a6a', 0.25)); dab(c, px - 0.003, py + 0.003, 0.012, col); }
+  }
+}
+
 // ── sky
 export interface SkyPalette {
   grad: [number, string][];
@@ -223,23 +282,35 @@ export function paintSky(pal: SkyPalette, seed = 77): HTMLCanvasElement {
     x.fillRect(r() * S, r() * S * 0.45, sz, sz);
   }
   for (const [cx, cy, sc] of pal.clouds ?? DEFAULT_CLOUDS) {
+    // anime cumulus: a silhouette in the shadow tone, the lit body shifted up-left inside it, bright crowns on top, flat bottom
     const parts: number[][] = [];
     for (let i = 0; i < 15; i++) {
       const t = i / 14, mid = 1 - Math.abs(t - 0.5) * 2, rad = (40 + mid * 90 * (0.6 + r() * 0.6)) * sc;
       parts.push([cx + (t - 0.5) * 380 * sc + (r() - 0.5) * 40 * sc, cy - rad * 0.5 - mid * 50 * sc * r(), rad]);
     }
+    for (let i = 0; i < 6; i++) { const p = parts[2 + Math.floor(r() * 11)]; parts.push([p[0] + (r() - 0.5) * p[2], p[1] - p[2] * (0.5 + r() * 0.4), p[2] * (0.45 + r() * 0.3)]); }
     const oc = newCanvas(S, S), o = oc.getContext('2d')!;
-    for (const [px, py, rad] of parts) { o.fillStyle = pal.shadow; o.beginPath(); o.arc(px, py + rad * 0.2, rad, 0, 7); o.fill(); }
-    for (const [px, py, rad] of parts) {
-      const gg = o.createRadialGradient(px - rad * 0.3, py - rad * 0.45, rad * 0.1, px, py, rad);
-      gg.addColorStop(0, pal.hi); gg.addColorStop(0.75, pal.cloud); gg.addColorStop(1, pal.edge);
-      o.fillStyle = gg; o.beginPath(); o.arc(px, py, rad * 0.9, 0, 7); o.fill();
-    }
+    const union = () => { o.beginPath(); for (const [px, py, rad] of parts) { o.moveTo(px + rad, py); o.arc(px, py, rad, 0, 7); } };
+    union(); o.fillStyle = pal.shadow; o.fill();
+    o.save(); union(); o.clip();
+    o.fillStyle = pal.cloud; o.beginPath();
+    for (const [px, py, rad] of parts) { o.moveTo(px - rad * 0.16 + rad * 0.86, py - rad * 0.24); o.arc(px - rad * 0.16, py - rad * 0.24, rad * 0.86, 0, 7); }
+    o.fill();
+    o.fillStyle = pal.hi; o.beginPath();
+    for (const [px, py, rad] of parts) if (py < cy - 60 * sc) { o.moveTo(px - rad * 0.3 + rad * 0.5, py - rad * 0.45); o.arc(px - rad * 0.3, py - rad * 0.45, rad * 0.5, 0, 7); }
+    o.fill();
+    o.restore();
     o.globalCompositeOperation = 'destination-out';
-    const fg = o.createLinearGradient(0, cy - 50 * sc, 0, cy + 10 * sc);
+    const fg = o.createLinearGradient(0, cy - 14 * sc, 0, cy + 4 * sc);
     fg.addColorStop(0, 'rgba(0,0,0,0)'); fg.addColorStop(1, 'rgba(0,0,0,1)');
-    o.fillStyle = fg; o.fillRect(0, cy - 50 * sc, S, S);
-    x.filter = 'blur(3px)'; x.drawImage(oc, 0, 0); x.filter = 'none';
+    o.fillStyle = fg; o.fillRect(0, cy - 14 * sc, S, S);
+    x.filter = 'blur(1.2px)'; x.drawImage(oc, 0, 0); x.filter = 'none';
+  }
+  // thin streaks low over the horizon
+  for (let i = 0; i < 7; i++) {
+    const yy = S * (0.62 + r() * 0.25), xx = r() * S, ww = 120 + r() * 220;
+    x.fillStyle = pal.cloud; x.globalAlpha = 0.35 + r() * 0.3;
+    x.beginPath(); x.ellipse(xx, yy, ww, 6 + r() * 6, 0, 0, 7); x.fill(); x.globalAlpha = 1;
   }
   if (pal.overcast) { x.fillStyle = `rgba(150,160,172,${clamp(pal.overcast, 0, 1)})`; x.fillRect(0, 0, S, S); }
   return cv;

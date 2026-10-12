@@ -1,6 +1,6 @@
 // Scene 1: a ramen stall (yatai) on a spring evening, sakura behind, a small town and a mountain in the back.
 import * as THREE from 'three';
-import { bandPts, blob, circ, clumps, dab, grass, JP, mottle, poly, rrect, soft, text, wood, type Ctx, type Pen } from '../core/paint';
+import { bandPts, blob, circ, clumps, dab, flowers, foliage, meadow, mottle, tufts, poly, rrect, soft, text, wood, type Ctx, type Pen } from '../core/paint';
 import { clamp, lerp, mix, pick, rand, rgba, rnd } from '../core/util';
 import { board, boardMat, cutout, cutoutAsset, foldBox, gableRoof, glowing, group, latheMat, memo, plainM, type Foldable } from '../kit/kit';
 import type { SceneDef } from './types';
@@ -18,7 +18,6 @@ const hillsA = () => cutoutAsset(K('hills'), hillsOutline, (c) => {
   let g = c.createLinearGradient(0, 3.2, 0, 0); g.addColorStop(0, '#aecbc4'); g.addColorStop(1, '#93b98f'); c.fillStyle = g; c.fillRect(-3.2, 0, 6.4, 3.4);
   c.save(); c.beginPath(); c.moveTo(-1, 0); for (let x = -1; x <= 3.15; x += 0.04) c.lineTo(x, mount(x)); c.lineTo(3.15, 0); c.closePath();
   g = c.createLinearGradient(0, 3.1, 0, 0.8); g.addColorStop(0, '#c9d5e2'); g.addColorStop(1, '#9fb5c9'); c.fillStyle = g; c.fill(); c.clip();
-  mottle(c, -0.6, 0.8, 3.4, 2.2, ['#b4c6d8', '#a9bccf', '#c6d3e0'], 60, [0.08, 0.2], 0.25);
   c.fillStyle = 'rgba(70,90,125,.16)'; c.beginPath(); poly(c, [[1.05, 3.2], [1.35, 0], [3.2, 0], [3.2, 3.2]]); c.fill();
   c.fillStyle = '#f6f8fb'; c.beginPath(); c.moveTo(-0.2, 2.42);
   for (let x = -0.2; x <= 2.3; x += 0.04) c.lineTo(x, 2.42 + 0.07 * Math.sin(x * 37) + 0.05 * Math.sin(x * 13));
@@ -35,7 +34,7 @@ const hillsA = () => cutoutAsset(K('hills'), hillsOutline, (c) => {
     clumps(c, fy, -3.2, 3.2, mix(col, '#355d35', 0.3));
   });
   g = c.createLinearGradient(0, 3.2, 0, 0.6); g.addColorStop(0, 'rgba(228,238,242,.35)'); g.addColorStop(1, 'rgba(228,238,242,0)'); c.fillStyle = g; c.fillRect(-3.2, 0, 6.4, 3.4);
-}, { ppu: 170, ink: 0.012 });
+}, { ppu: 170, ink: 0 });
 
 // ── background: the town
 interface House { x0: number; x1: number; h: number; roof: number; wall: string; rc: string; win: number[][]; lattice?: boolean }
@@ -91,7 +90,7 @@ const townA = () => cutoutAsset(K('town'), townOutline, (c) => {
     }
     const m = (h.x0 + h.x1) / 2, w = h.x1 - h.x0;
     c.fillStyle = h.wall; c.fillRect(h.x0, FENCE, w, h.h - FENCE);
-    mottle(c, h.x0, FENCE, w, h.h - FENCE, [mix(h.wall, '#000000', 0.06), mix(h.wall, '#ffffff', 0.2)], 10, [0.04, 0.09], 0.3);
+    c.fillStyle = mix(h.wall, '#7a6a8a', 0.18); c.fillRect(h.x1 - w * 0.28, FENCE, w * 0.28, h.h - FENCE); // shaded side
     const g = c.createLinearGradient(0, FENCE, 0, h.h); g.addColorStop(0, 'rgba(90,70,50,.2)'); g.addColorStop(1, 'rgba(90,70,50,0)'); c.fillStyle = g; c.fillRect(h.x0, FENCE, w, h.h - FENCE);
     if (h.lattice) {
       const lt = FENCE + (h.h - FENCE) * 0.42; c.fillStyle = '#7a5236'; c.fillRect(h.x0, FENCE, w, lt - FENCE);
@@ -108,7 +107,7 @@ const townA = () => cutoutAsset(K('town'), townOutline, (c) => {
     c.strokeStyle = mix(h.rc, '#000000', 0.35); c.lineWidth = 0.03; c.beginPath(); c.moveTo(h.x0 - 0.05, h.h - 0.02); c.lineTo(m, h.h + h.roof); c.lineTo(h.x1 + 0.05, h.h - 0.02); c.stroke();
   }
 }, {
-  ppu: 170, ink: 0.014, emissive: (c) => {
+  ppu: 170, ink: 0, emissive: (c) => {
     for (const h of HOUSES) {
       if ('pagoda' in h) { soft(c, h.pagoda, FENCE + 0.08, 0.2, '#ffb060', 0.6); c.fillStyle = '#ffc070'; c.fillRect(h.pagoda - 0.06, FENCE, 0.12, 0.17); continue; }
       for (const [x, y] of h.win) { soft(c, x, y, 0.17, '#ffb066', 0.45); c.fillStyle = '#ffd27f'; c.fillRect(x - 0.08, y - 0.065, 0.16, 0.13); }
@@ -132,13 +131,10 @@ const treeA = () => cutoutAsset(K('tree'), treeOutline, (c) => {
   [[0, 1.4, -0.5, 2.0, 0.06], [0, 1.4, 0.55, 1.95, 0.06], [0, 1.5, 0.05, 2.4, 0.05], [-0.3, 1.75, -0.75, 2.2, 0.035], [0.3, 1.72, 0.8, 2.35, 0.035]].forEach(([a, b, x, y, w]) => {
     c.lineWidth = w; c.beginPath(); c.moveTo(a, b); c.quadraticCurveTo((a + x) / 2 + 0.1, (b + y) / 2, x, y); c.stroke();
   });
-  for (let i = 0; i < 700; i++) {
-    const a = rand(0, 6.28), rr = Math.sqrt(rnd()) * 1.12, x = Math.cos(a) * rr * 1.08, y = 2.25 + Math.sin(a) * rr * 0.88;
-    if (y < 1.55 && Math.abs(x) < 0.25 && rnd() < 0.6) continue;
-    const light = clamp(0.5 + (y - 2.25) * 0.4 - x * 0.18 + rand(-0.25, 0.25), 0, 1);
-    blob(c, x, y, rand(0.035, 0.09), mix('#e58fa7', '#fff0f4', light), rand(0.7, 1), 0.3);
-  }
-  for (let i = 0; i < 140; i++) { const a = rand(0, 6.28), rr = Math.sqrt(rnd()) * 1.05; dab(c, Math.cos(a) * rr - 0.15, 2.35 + Math.sin(a) * rr * 0.8, rand(0.01, 0.022), '#ffffff', 0.85); }
+  c.fillStyle = '#e293ab'; c.beginPath(); c.ellipse(0, 2.25, 1.2, 1.0, 0, 0, 7); c.fill();
+  foliage(c, -1.15, 1.35, 2.3, 1.85, { shade: '#e695ae', mid: '#fbc0d0', light: '#ffe2ea', hi: '#ffffff' },
+    { n: 46, r: [0.17, 0.3], inside: (x, y) => (x / 1.05) ** 2 + ((y - 2.25) / 0.82) ** 2 < 1 });
+  for (let i = 0; i < 60; i++) { const a = rand(0, 6.28), rr = rand(0.85, 1.1); dab(c, Math.cos(a) * rr * 1.08, 2.25 + Math.sin(a) * rr * 0.85, rand(0.012, 0.022), pick(['#f6c2d0', '#fde4eb']), 1); }
 }, { ppu: 300, t: 0.03 });
 const buildTree = () => { const a = cutout(treeA()), b = cutout(treeA()); b.rotation.y = Math.PI / 2; return group(a, b); };
 
@@ -232,7 +228,7 @@ const lanternGlow = () => memo(K('lanternGlow'), () => { const m = glowing(lante
 function buildLantern() {
   const dark = plainM(K('lanDark'), '#231a16');
   const pts: THREE.Vector2[] = [];
-  for (let i = 0; i <= 14; i++) { const y = -0.19 + (0.38 * i) / 14; pts.push(new THREE.Vector2(0.07 + 0.085 * Math.pow(Math.cos(((y / 0.19) * Math.PI) / 2), 0.6), y)); }
+  for (let i = 0; i <= 14; i++) { const y = -0.19 + (0.38 * i) / 14; pts.push(new THREE.Vector2(0.07 + 0.085 * Math.pow(Math.max(0, Math.cos(((y / 0.19) * Math.PI) / 2)), 0.6), y)); }
   const body = new THREE.Mesh(new THREE.LatheGeometry(pts, 32), lanternGlow()); body.position.y = -0.35; body.rotation.y = Math.PI;
   const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.08, 0.04, 20), dark); cap.position.y = -0.14;
   const cap2 = cap.clone(); cap2.position.y = -0.56;
@@ -364,10 +360,8 @@ function buildTanuki() {
 
 // ── ground
 function paintGround(c: Ctx, W: number, D: number) {
-  const greens = ['#a3cd78', '#86b462', '#9cc774', '#b2d688', '#7aa85a'];
-  c.fillStyle = '#93bf6e'; c.fillRect(-W / 2, -D / 2, W, D);
-  for (let i = 0; i < 80; i++) blob(c, rand(-W / 2, W / 2), rand(-D / 2, D / 2), rand(0.25, 0.7), pick(greens), 0.35, 0.3);
-  soft(c, -2.3, 1.45, 1.3, '#5f8f4f', 0.35);
+  meadow(c, -W / 2, -D / 2, W, D, { base: '#8fc06a', light: '#b5db7f', shade: '#6fa35a', tufts: [] });
+  blob(c, -2.3, 1.3, 1.1, '#5f9257', 0.5, 0.3); // shade under the sakura
   const PX = 1.65, PY0 = -2.0, PY1 = 0.62, inPave = (x: number, y: number, m = 0.05) => x > -PX + m && x < PX - m && y > PY0 + m && y < PY1 - m;
   c.save(); c.beginPath(); rrect(c, -PX, PY0, PX, PY1, 0.28); c.clip(); c.fillStyle = '#b4a98f'; c.fillRect(-PX, PY0, 2 * PX, PY1 - PY0);
   for (let y = PY0; y < PY1;) {
@@ -382,13 +376,8 @@ function paintGround(c: Ctx, W: number, D: number) {
     y += rh;
   }
   c.restore();
-  grass(c, -W / 2, -D / 2, W, D, greens, 7500, (x, y) => inPave(x, y));
-  for (let i = 0; i < 100; i++) {
-    const x = rand(-W / 2 + 0.2, W / 2 - 0.2), y = rand(-D / 2 + 0.2, D / 2 - 0.2);
-    if (inPave(x, y, -0.12)) continue;
-    const col = pick(['#ffffff', '#fff2a8', '#f7c6d4', '#ffffff']);
-    for (let k = 0; k < 3; k++) dab(c, x + rand(-0.035, 0.035), y + rand(-0.035, 0.035), rand(0.012, 0.02), col, 0.95);
-  }
+  tufts(c, -W / 2, -D / 2, W, D, ['#6a9e4f', '#7fb35a', '#a2cf72', '#5c8f47'], 1700, (x, y) => inPave(x, y, -0.02));
+  flowers(c, -W / 2 + 0.2, -D / 2 + 0.2, W - 0.4, D - 0.4, ['#ffffff', '#fff2a8', '#f7c6d4'], 60, (x, y) => inPave(x, y, -0.12));
   [[1.95, -1.75], [2.32, -1.98], [2.66, -2.18]].forEach(([x, y]) => { dab(c, x, y - 0.015, 0.13, '#6f7f5a', 0.5); dab(c, x, y, 0.12, '#cfc6b4'); dab(c, x - 0.02, y + 0.02, 0.08, '#e2dbcc'); });
   for (let i = 0; i < 70; i++) dab(c, -2.3 + rand(-1.3, 1.6), 1.4 + rand(-1.1, 0.9), 0.018, pick(['#f7c6d4', '#fde4ea']), 0.9);
 }
@@ -403,11 +392,11 @@ export const YATAI: SceneDef = {
   seed: 20261012,
   base: { w: 6.4, d: 5.0, paint: paintGround },
   sky: {
-    day: { grad: [[0, '#5aa3db'], [0.5, '#9ccfee'], [1, '#eef6f2']], cloud: '#ffffff', hi: '#ffffff', edge: '#eef3f8', shadow: '#bccde2' },
-    evening: { grad: [[0, '#262b58'], [0.38, '#6c548c'], [0.7, '#e48d6c'], [1, '#ffd79c']], cloud: '#f2b39b', hi: '#ffe0c2', edge: '#d99a95', shadow: '#7a5f92', stars: true },
+    day: { grad: [[0, '#3b8ad6'], [0.42, '#78bcec'], [0.78, '#bfe3f2'], [1, '#eaf5ee']], cloud: '#fbfaf3', hi: '#ffffff', edge: '#fbfaf3', shadow: '#b5c0de' },
+    evening: { grad: [[0, '#1d2257'], [0.38, '#5d4a8e'], [0.7, '#e3856a'], [1, '#ffd49a']], cloud: '#f4ae94', hi: '#ffdcb8', edge: '#f4ae94', shadow: '#83649d', stars: true },
   },
   light: {
-    day: { sky: '#e3f0ff', ground: '#9c8a62', hemi: 1.15, sun: '#fff1d6', sunI: 2.6, sunPos: [4, 8, 5], bloom: 0.12 },
+    day: { sky: '#e3f0ff', ground: '#9c8a62', hemi: 1.15, sun: '#fff1d6', sunI: 2.6, sunPos: [4, 8, 5], bloom: 0.03 },
     evening: { sky: '#9a90d0', ground: '#5a4648', hemi: 0.85, sun: '#ff8f55', sunI: 0.9, sunPos: [-6, 2.6, 3.5], bloom: 0.75 },
   },
   steps: [

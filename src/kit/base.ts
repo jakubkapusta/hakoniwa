@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { dab, grain, newCanvas, rrect, toTex, type Ctx } from '../core/paint';
 import { pick, rand, rgba } from '../core/util';
-import { memo, paperMat } from './kit';
+import { memo, paperMat, toon } from './kit';
 
 export interface BaseDef {
   w: number; d: number;
@@ -44,7 +44,7 @@ export function buildBase(key: string, def: BaseDef): THREE.Mesh {
     x.fillStyle = g; x.fillRect(0, 0, 1024, 128);
     const st = toTex(sc, false);
     st.wrapS = st.wrapT = THREE.RepeatWrapping; st.repeat.set(0.5, 1 / T); st.offset.set(0, -(1 - T) / T);
-    return { geo, mats: [paperMat(toTex(cv)), new THREE.MeshStandardMaterial({ map: st, roughness: 1 })] };
+    return { geo, mats: [paperMat(toTex(cv)), toon({ map: st })] };
   });
   const m = new THREE.Mesh(geo, mats);
   m.rotation.x = -Math.PI / 2; m.position.y = -BASE_T; m.receiveShadow = true;

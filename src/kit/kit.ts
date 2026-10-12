@@ -11,17 +11,28 @@ export function memo<T>(k: string, f: () => T): T {
   return memoMap.get(k) as T;
 }
 
+/** Cel shading: light falls off in a few hard steps (lit, half-lit, shade) like in hand-drawn animation. */
+const TOON = (() => {
+  const d = new Uint8Array([92, 92, 92, 255, 150, 150, 150, 255, 214, 214, 214, 255, 255, 255, 255, 255]);
+  const t = new THREE.DataTexture(d, 4, 1); t.minFilter = t.magFilter = THREE.NearestFilter; t.generateMipmaps = false; t.needsUpdate = true;
+  return t;
+})();
+export type Mat = THREE.MeshToonMaterial;
+export interface MatOpts { side?: THREE.Side; emissive?: THREE.ColorRepresentation; emissiveIntensity?: number; transparent?: boolean; opacity?: number;
+  /** Ignored (kept so older scene code reads naturally). */ roughness?: number; metalness?: number }
+export function toon(o: THREE.MeshToonMaterialParameters & MatOpts): Mat {
+  const { roughness: _r, metalness: _m, ...rest } = o;
+  return new THREE.MeshToonMaterial({ gradientMap: TOON, ...rest });
+}
 /** Cut edge of the cardboard (lighter) and the unprinted back (grey-brown). */
-export const EDGE = new THREE.MeshStandardMaterial({ color: '#ecdcbf', roughness: 1 });
-export const BACKM = new THREE.MeshStandardMaterial({ color: '#cdb592', roughness: 1 });
-export const paperMat = (map: THREE.Texture, o: THREE.MeshStandardMaterialParameters = {}) =>
-  new THREE.MeshStandardMaterial({ map, roughness: 0.9, metalness: 0, ...o });
-export const plain = (color: string, o: THREE.MeshStandardMaterialParameters = {}) =>
-  new THREE.MeshStandardMaterial({ color, roughness: 0.85, ...o });
-export const plainM = (key: string, color: string, o: THREE.MeshStandardMaterialParameters = {}) => memo('plain:' + key, () => plain(color, o));
+export const EDGE = toon({ color: '#ecdcbf' });
+export const BACKM = toon({ color: '#cdb592' });
+export const paperMat = (map: THREE.Texture, o: MatOpts = {}) => toon({ map, ...o });
+export const plain = (color: string, o: MatOpts = {}) => toon({ color, ...o });
+export const plainM = (key: string, color: string, o: MatOpts = {}) => memo('plain:' + key, () => plain(color, o));
 
 /** Material whose emissiveIntensity the scene drives with the evening. */
-export const glowing = (m: THREE.MeshStandardMaterial) => { m.emissive = new THREE.Color('#ffffff'); m.emissiveIntensity = 0; return m; };
+export const glowing = (m: Mat) => { m.emissive = new THREE.Color('#ffffff'); m.emissiveIntensity = 0; return m; };
 
 /** Flat board lying in XZ: +y face printed, -y face plain back, sides are cut edges. */
 export function board(w: number, l: number, t: number, top: THREE.Material, bottom: THREE.Material = BACKM): THREE.Mesh {
@@ -34,7 +45,7 @@ export function panel(w: number, h: number, t: number, front: THREE.Material, ba
 
 /** Print for a board: painted in world units with y down. `emissive` paints a glow map on black. */
 export function boardMat(key: string, W: number, H: number, paint: (c: Ctx, W: number, H: number) => void,
-  { ppu = 320, emissive }: { ppu?: number; emissive?: (c: Ctx, W: number, H: number) => void } = {}): THREE.MeshStandardMaterial {
+  { ppu = 320, emissive }: { ppu?: number; emissive?: (c: Ctx, W: number, H: number) => void } = {}): Mat {
   return memo(key, () => {
     let s = ppu;
     if (W * s > 1024 || H * s > 1024) s = 1024 / Math.max(W, H);
@@ -53,10 +64,10 @@ export function boardMat(key: string, W: number, H: number, paint: (c: Ctx, W: n
   });
 }
 
-export interface CutoutAsset { geo: THREE.ExtrudeGeometry; mat: THREE.MeshStandardMaterial }
+export interface CutoutAsset { geo: THREE.ExtrudeGeometry; mat: Mat }
 /** A shape cut out of cardboard: outline extruded to the board thickness, print painted with the same outline (y up). */
 export function cutoutAsset(key: string, outline: Outline, paint: (c: Ctx, bb: THREE.Box3) => void,
-  { ppu = 300, t = 0.035, emissive, ink = 0.022 }: { ppu?: number; t?: number; emissive?: (c: Ctx, bb: THREE.Box3) => void; ink?: number } = {}): CutoutAsset {
+  { ppu = 300, t = 0.035, emissive, ink = 0.03 }: { ppu?: number; t?: number; emissive?: (c: Ctx, bb: THREE.Box3) => void; ink?: number } = {}): CutoutAsset {
   return memo(key, () => {
     const shape = new THREE.Shape(); outline(shape);
     const geo = new THREE.ExtrudeGeometry(shape, { depth: t, bevelEnabled: false, curveSegments: 14 });
@@ -72,7 +83,7 @@ export function cutoutAsset(key: string, outline: Outline, paint: (c: Ctx, bb: T
       c.setTransform(s, 0, 0, -s, -bb.min.x * s, bb.max.y * s);
       if (bg) { c.fillStyle = bg; c.fillRect(bb.min.x, bb.min.y, W, H); }
       c.save(); c.beginPath(); outline(c); c.clip(); fn(c, bb);
-      if (ink && !bg) { c.lineWidth = ink; c.strokeStyle = 'rgba(74,52,38,.55)'; c.beginPath(); outline(c); c.stroke(); }
+      if (ink && !bg) { c.lineWidth = ink; c.strokeStyle = 'rgba(56,38,28,.88)'; c.beginPath(); outline(c); c.stroke(); }
       c.restore();
       return cv;
     };
@@ -85,7 +96,7 @@ export function cutoutAsset(key: string, outline: Outline, paint: (c: Ctx, bb: T
 export const cutout = (a: CutoutAsset) => new THREE.Mesh(a.geo, [a.mat, EDGE]);
 
 /** Lathe (lanterns, bowls, post boxes) with a painted wrap-around print. */
-export function latheMat(key: string, w: number, h: number, paint: (c: Ctx, w: number, h: number) => void, o: THREE.MeshStandardMaterialParameters = {}) {
+export function latheMat(key: string, w: number, h: number, paint: (c: Ctx, w: number, h: number) => void, o: MatOpts = {}) {
   return memo(key, () => {
     const cv = newCanvas(w, h), c = cv.getContext('2d')!;
     paint(c, w, h); grain(cv, 7);

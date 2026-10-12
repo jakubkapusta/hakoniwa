@@ -6,6 +6,7 @@ import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { paintSky, setAniso, type SkyPalette } from '../core/paint';
+import { InkPass } from './inkpass';
 import { lerp, smooth } from '../core/util';
 import type { LightKey } from '../scenes/types';
 
@@ -29,6 +30,7 @@ export class Stage {
   sun = new THREE.DirectionalLight('#fff1d6', 2.6);
   private composer: EffectComposer;
   private bloom: UnrealBloomPass;
+  private ink: InkPass;
   private sky: THREE.Mesh<THREE.PlaneGeometry, THREE.ShaderMaterial>;
   private keys?: { day: LightKey; evening: LightKey };
   userMoved = false;
@@ -63,8 +65,11 @@ export class Stage {
     this.camera.add(this.sky);
 
     const rt = new THREE.WebGLRenderTarget(1, 1, { type: THREE.HalfFloatType, samples: 4 });
+    rt.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
     this.composer = new EffectComposer(r, rt);
     this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.ink = new InkPass(this.camera);
+    this.composer.addPass(this.ink);
     this.bloom = new UnrealBloomPass(new THREE.Vector2(256, 256), 0.2, 0.55, 0.78);
     this.composer.addPass(this.bloom);
     this.composer.addPass(new OutputPass());
@@ -104,8 +109,9 @@ export class Stage {
   fit(force = false) {
     const w = innerWidth, h = innerHeight, a = w / h;
     this.renderer.setSize(w, h, false);
-    this.composer.setSize(w, h);
+    this.ink.lineScale = this.renderer.getPixelRatio() * 1.1;
     this.composer.setPixelRatio(this.renderer.getPixelRatio());
+    this.composer.setSize(w, h);
     this.camera.aspect = a; this.camera.updateProjectionMatrix();
     // the sky plane fills the frustum far away
     const dist = 300, hh = 2 * Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2)) * dist;
@@ -135,7 +141,7 @@ export class Stage {
       this.slow = 0; this.quality -= 0.25;
       const pr = Math.max(1, Math.min(devicePixelRatio, 2) * this.quality);
       this.renderer.setPixelRatio(pr); this.fit();
-      if (this.quality < 0.6) this.sun.shadow.mapSize.set(1024, 1024);
+      if (this.quality < 0.6) { this.sun.shadow.mapSize.set(1024, 1024); this.sun.shadow.map?.dispose(); this.sun.shadow.map = null; }
     }
   }
 }

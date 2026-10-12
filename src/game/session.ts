@@ -133,7 +133,7 @@ export class Session {
       if (this.auto || this.ctx.done || this.drag) return;
       audio();
       this.drag = { id, card, x0: e.clientX, y0: e.clientY, started: false, near: false };
-      card.setPointerCapture(e.pointerId);
+      try { card.setPointerCapture(e.pointerId); } catch { /* synthetic events in tests */ }
     });
     card.addEventListener('pointermove', (e) => {
       const d = this.drag;
@@ -149,7 +149,7 @@ export class Session {
       const d = this.drag;
       if (!d || d.card !== card) return;
       this.drag = null; this.stage.controls.enabled = true;
-      if (!d.started) { this.tapPlace(id); return; }
+      if (!d.started) { this.nudge(card); return; }
       const o = d.obj!;
       if (d.near) { this.place(id, o); return; }
       const s0 = o.scale.x;
@@ -161,17 +161,27 @@ export class Session {
     card.addEventListener('pointercancel', up);
   }
   private ray = new THREE.Raycaster();
+  /** A tap only wiggles the card: pieces have to be carried onto the scene. */
+  private nudge(card: HTMLElement) {
+    card.classList.remove('nudge'); void card.offsetWidth; card.classList.add('nudge');
+    if (!this.nudged) { this.nudged = true; toast('Przeciągnij kawałek na scenę'); }
+  }
+  private nudged = false;
+  /** The piece hangs just above the finger at the depth of its target, so it is always visible and already at its final size. */
   private moveDrag(e: PointerEvent) {
-    const d = this.drag!, inf = this.info[d.id];
-    this.ray.setFromCamera(new THREE.Vector2((e.clientX / innerWidth) * 2 - 1, -(e.clientY / innerHeight) * 2 + 1), this.stage.camera);
-    const hit = new V3();
-    if (!this.ray.ray.intersectPlane(new THREE.Plane(new V3(0, 1, 0), -inf.center.y), hit)) return;
-    const off = hit.clone().sub(inf.center); off.y = 0;
-    if (off.length() > 5) hit.copy(inf.center).add(off.setLength(5));
-    d.obj!.position.copy(hit).sub(inf.offset); d.obj!.position.y += 0.35;
-    const p = inf.center.clone().project(this.stage.camera);
+    const d = this.drag!, inf = this.info[d.id], cam = this.stage.camera;
+    const lift = e.pointerType === 'touch' ? 48 : 14;
+    const x = e.clientX, y = e.clientY - lift;
+    this.ray.setFromCamera(new THREE.Vector2((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1), cam);
+    const at = this.ray.ray.at(cam.position.distanceTo(inf.center), new V3());
+    const p = inf.center.clone().project(cam);
     const sx = ((p.x + 1) / 2) * innerWidth, sy = ((1 - p.y) / 2) * innerHeight;
-    d.near = Math.hypot(e.clientX - sx, e.clientY - sy) < Math.max(60, Math.min(innerWidth, innerHeight) * 0.12);
+    const dist = Math.hypot(x - sx, y - sy), thr = Math.max(56, Math.min(innerWidth, innerHeight) * 0.13);
+    d.near = dist < thr;
+    // close to the outline the piece is pulled towards its place, like a magnet
+    const pull = clamp(1 - dist / (thr * 1.6), 0, 1) * 0.7;
+    at.lerp(inf.center.clone().add(new V3(0, 0.35, 0)), pull * pull);
+    d.obj!.position.copy(at).sub(inf.offset);
   }
   /** Taps on the 3D view: only used for the secret after the finale. */
   private bindCanvasTap() {

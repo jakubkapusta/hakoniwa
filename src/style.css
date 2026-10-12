@@ -61,6 +61,8 @@ button.ghost { background: transparent; color: var(--ink2); padding: 8px 12px; }
 .card img { width: 66px; height: 66px; display: block; margin: 0 auto 2px; pointer-events: none; -webkit-user-drag: none; }
 .card span { font-size: 12px; font-weight: 800; color: var(--ink2); }
 .card:active { transform: scale(.95); }
+.card.nudge { animation: nudge .45s; }
+@keyframes nudge { 20% { transform: translateY(-10px) rotate(-4deg); } 45% { transform: translateY(-4px) rotate(3deg); } 70% { transform: translateY(-2px) rotate(-1.5deg); } }
 .card.gone { opacity: 0; transform: translateY(24px) scale(.7); pointer-events: none; }
 @keyframes cardIn { from { opacity: 0; transform: translateY(30px) scale(.8); } }
 #toast { position: fixed; left: 50%; top: 30%; transform: translate(-50%, -50%) scale(.9); background: rgba(247,240,226,.95); padding: 10px 20px; border-radius: 999px;
