@@ -427,7 +427,8 @@ export const PRZYSTANEK: SceneDef = {
     const head = new THREE.SpotLight('#fff1c8', 0, 6, 0.5, 0.6, 1.2);
     const bus = buildBus(); bus.visible = false;
     // the bus drives out of the base's left edge and away over the right one: clip it to the base
-    const clip = [new THREE.Plane(new V3(1, 0, 0), 3.2), new THREE.Plane(new V3(-1, 0, 0), 3.2)];
+    const CLIP0 = [new THREE.Plane(new V3(1, 0, 0), 3.2), new THREE.Plane(new V3(-1, 0, 0), 3.2)];
+    const clip = CLIP0.map((p) => p.clone());
     bus.traverse((m) => { const mm = m as THREE.Mesh; if (mm.isMesh) (Array.isArray(mm.material) ? mm.material : [mm.material]).forEach((x) => { x.clippingPlanes = clip; }); });
     head.position.set(1.4, 0.45, 0); head.target.position.set(4, 0, 0); bus.add(head, head.target);
     scene.add(lamp, vendLight, bus);
@@ -444,6 +445,8 @@ export const PRZYSTANEK: SceneDef = {
       alive: () => wake(false),
       update(dt, t, c) {
         const e = c.evening;
+        // clipping planes live in world space: follow the diorama when it is moved/scaled (shelf)
+        scene.updateMatrixWorld(); clip.forEach((p, i) => p.copy(CLIP0[i]).applyMatrix4(scene.matrixWorld));
         lampGlow().emissiveIntensity = (c.placed.has('pole') ? e : 0) * 3;
         lamp.intensity = (c.placed.has('pole') ? e : 0) * 7;
         vendFront().emissiveIntensity = e * 0.32;

@@ -35,6 +35,8 @@ export class Stage {
   private keys?: { day: LightKey; evening: LightKey };
   userMoved = false;
   camTarget = 1;
+  /** false while another view (the shelf) places the camera itself. */
+  autoFrame = true;
   /** 1 = full quality; drops when frames are slow. */
   quality = 1;
   private slow = 0;
@@ -89,6 +91,14 @@ export class Stage {
     (old.tDay.value as THREE.Texture | null)?.dispose(); (old.tEve.value as THREE.Texture | null)?.dispose();
     const tex = (p: SkyPalette) => { const t = new THREE.CanvasTexture(paintSky(p, seed)); t.colorSpace = THREE.SRGBColorSpace; return t; };
     old.tDay.value = tex(day); old.tEve.value = tex(evening);
+    this.sky.visible = true;
+  }
+  hideSky() { this.sky.visible = false; }
+  /** Where the sun's shadow map looks (diorama by default, the shelf needs a taller box). */
+  shadowBox(cx: number, cy: number, half: number) {
+    this.sun.target.position.set(cx, cy, 0);
+    Object.assign(this.sun.shadow.camera, { left: -half, right: half, top: half, bottom: -half, far: 40 });
+    this.sun.shadow.camera.updateProjectionMatrix();
   }
   setLights(keys: { day: LightKey; evening: LightKey }) { this.keys = keys; this.setEvening(0); }
 
@@ -119,7 +129,7 @@ export class Stage {
     this.sky.material.uniforms.aspect.value = a;
     const D = Math.max(12.5, (a < 1 ? 7.9 : 8.4) / (2 * Math.tan(THREE.MathUtils.degToRad(15)) * a));
     this.controls.minDistance = D * 0.4; this.controls.maxDistance = D * 1.5;
-    if (!this.userMoved || force) {
+    if (this.autoFrame && (!this.userMoved || force)) {
       const t = new V3(0, a < 1 ? this.camTarget + 0.1 : this.camTarget, 0);
       this.controls.target.copy(t);
       this.camera.position.copy(t).addScaledVector(new V3(0.5, 0.44, 1).normalize(), D);
@@ -128,7 +138,7 @@ export class Stage {
   }
 
   render(dt: number) {
-    this.controls.update();
+    if (this.autoFrame) this.controls.update(); // the shelf places the camera itself (controls would clamp its angle)
     this.composer.render(dt);
     this.adapt(dt);
   }
@@ -158,6 +168,13 @@ export class Snapshot {
     const dl = new THREE.DirectionalLight('#fff4e0', 2.2); dl.position.set(3, 6, 4); dl.castShadow = true;
     dl.shadow.mapSize.set(1024, 1024); Object.assign(dl.shadow.camera, { left: -6, right: 6, top: 6, bottom: -6 });
     this.scene.add(dl);
+  }
+  /** Like shoot, but returns a canvas copy (for painting into textures). */
+  shootCanvas(o: THREE.Object3D, w: number, h: number, dir: THREE.Vector3, fill = 1.02): HTMLCanvasElement {
+    this.shoot(o, w, h, dir, fill);
+    const c = document.createElement('canvas'); c.width = w; c.height = h;
+    c.getContext('2d')!.drawImage(this.r.domElement, 0, 0);
+    return c;
   }
   /** Fit `o` in a w×h image looking along `dir`. */
   shoot(o: THREE.Object3D, w: number, h: number, dir: THREE.Vector3, fill = 1.02, type = 'image/png'): string {

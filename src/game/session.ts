@@ -39,6 +39,7 @@ export class Session {
 
   constructor(private stage: Stage, private snap: Snapshot, public def: SceneDef) {
     stage.reset();
+    stage.autoFrame = true; stage.controls.enabled = true; stage.shadowBox(0, 0, 6);
     reseed(def.seed);
     this.fx = new Fx(stage.scene);
     this.ctx = { scene: stage.scene, fx: this.fx, placed: new Map(), evening: 0, done: false, sound: (l, v) => this.ambience.set(l, v) };
@@ -241,7 +242,7 @@ export class Session {
   private async checkStep(my: number) {
     const st = this.def.steps[this.stepIdx];
     if (this.advancing || !st.pieces.every((id) => this.ctx.placed.has(id))) return;
-    this.advancing = true; sfx.chime(); toast(`${st.name} gotowe ✓`);
+    this.advancing = true; sfx.chime(); toast(`${st.name} ✓`);
     await this.wait(0.9);
     this.advancing = false;
     if (my !== this.gen) return;
@@ -271,8 +272,8 @@ export class Session {
   }
   private showFinal(fresh: boolean) {
     const st = sceneSave(this.def.id);
-    $('finalJp').textContent = fresh ? 'おつかれさま' : this.def.jp;
-    $('finalTitle').textContent = fresh ? `${this.def.title} gotowe` : this.def.title;
+    $('finalJp').textContent = fresh ? 'おつかれさま · gotowe!' : this.def.jp;
+    $('finalTitle').textContent = this.def.title;
     $('finalSecret').innerHTML = st.secret ? `Sekret: <b>${this.def.secret.name}</b> ✓` : 'Gdzieś ukrył się sekret. Obróć dioramę i stuknij go.';
     $('duskBtn').textContent = this.eveningTarget ? '☀ Dzień' : '☾ Wieczór';
     $('final').classList.add('show');

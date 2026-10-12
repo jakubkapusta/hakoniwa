@@ -3,7 +3,7 @@
 > Składasz kartonową dioramę jak japoński zestaw modelarski. Kiedy kładziesz ostatni kawałek, robi się wieczór i miniatura ożywa.
 
 **Mieszanka:** zestaw modelarski z papieru (jak japońskie Sankei Miniatuart) × spokojne puzzle × kolekcja miniatur
-**Status:** M1 i szkielet M2 zrobione (2026-10-12), czekamy na test właściciela na telefonie.
+**Status:** M1 i M2 zrobione (2026-10-12), czekamy na test właściciela.
 **Prototyp:** `~/code/plany/hakoniwa/prototyp/` (jeden plik, punkt wyjścia dla tej gry).
 
 *Hakoniwa* to po japońsku „ogród w pudełku”, czyli miniaturowy krajobraz, który się układa i podziwia.
@@ -111,7 +111,8 @@ Nadzorca sprawdza wynik po każdym z nich.
 
 - **M0: Prototyp scenki** (zrobione, `~/code/plany/hakoniwa/prototyp/`).
 - **M1: Jedna scenka na serio** (zrobione 2026-10-12). Repozytorium, format danych scenki (`src/scenes/types.ts`), Yatai na tym formacie, bloom wieczorem, dźwięk z warstwami, ukryty tanuki, zapis po każdym kawałku, PWA.
-- **M2 (szkielet zrobiony 2026-10-12):** półka z pudełkami (okładka renderowana z gotowej dioramy), druga scenka „Przystanek w deszczu” (deszcz z kręgami na kałużach, autobus kursujący w finale, świetliki, kappa jako sekret). **STOP: właściciel testuje na telefonie.** Czy składanie odpręża, czy finał wzrusza i czy grafika ma już klimat. Dalej w M2: trzecia scenka, skill do dodawania scenek.
+- **M2 (szkielet zrobiony 2026-10-12):** półka z pudełkami (okładka renderowana z gotowej dioramy), druga scenka „Przystanek w deszczu” (deszcz z kręgami na kałużach, autobus kursujący w finale, świetliki, kappa jako sekret). **STOP: właściciel testuje na telefonie.** Czy składanie odpręża, czy finał wzrusza i czy grafika ma już klimat. 
+- **M2 (zrobione 2026-10-12):** półka jako pokój w 3D (ściana, tatami, regał, światło przez shoji, lampa, ozdoby), gotowe dioramy stoją na półce jako żywe miniatury, pudełka z okładką, pora dnia według zegara, przelot kamery przy otwieraniu; trzecia scenka „Kapliczka Inari” (jesień, torii, kitsunebi); skill `nowa-scenka` do dodawania scenek. Wcześniej, po teście M1: styl anime (cel shading, kontur, nowe pędzle), naprawa białych błysków, przeciąganie bez stukania.
 - **M3: Szlif.** Pozostałe scenki, pory dnia i pogoda na półce, ulica miniatur, wybrane pomysły z listy wyżej, tryb offline.
 
 ## Ryzyka i otwarte pytania

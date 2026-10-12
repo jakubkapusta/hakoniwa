@@ -1,5 +1,5 @@
 // All sound is synthesized with Web Audio: one-shot effects plus ambient layers that pieces switch on.
-export type Layer = 'town' | 'leaves' | 'chime' | 'bubble' | 'crickets' | 'rain' | 'frogs' | 'hum' | 'crow' | 'engine' | 'stream';
+export type Layer = 'town' | 'leaves' | 'chime' | 'bubble' | 'crickets' | 'rain' | 'frogs' | 'hum' | 'crow' | 'engine' | 'stream' | 'suzu' | 'sweep';
 
 let AC: AudioContext | null = null;
 let master: GainNode, noiseB: AudioBuffer;
@@ -92,6 +92,12 @@ class AmbientLayer {
       case 'crow':
         for (let i = 0; i < 2 + Math.floor(Math.random() * 2); i++) noise(t + i * 0.38, 0.28, { type: 'bandpass', freq: 1100, q: 6, gain: 0.25, attack: 0.03, out });
         this.nextAt = now + 7 + Math.random() * 9; break;
+      case 'suzu': // shrine bells: a bright shaken cluster
+        for (let i = 0; i < 9; i++) tone(t + i * 0.045 + Math.random() * 0.02, 2600 + Math.random() * 900, 0.35, { type: 'triangle', gain: 0.035, out });
+        this.nextAt = now + 9 + Math.random() * 10; break;
+      case 'sweep': // a bamboo broom on gravel
+        noise(t, 0.45, { type: 'bandpass', freq: 3200, q: 0.7, gain: 0.07, attack: 0.15, out });
+        this.nextAt = now + 1.6 + Math.random() * 0.6; break;
       default: this.nextAt = now + 1000;
     }
   }

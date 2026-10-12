@@ -7,35 +7,24 @@ button { font: inherit; font-weight: 800; font-size: 13px; color: var(--ink); bo
 .screen { visibility: hidden; opacity: 0; transition: opacity .45s, visibility 0s .45s; }
 .screen.show { visibility: visible; opacity: 1; transition: opacity .45s; }
 
-/* ── shelf */
-#shelf { position: fixed; inset: 0; overflow-y: auto; overscroll-behavior: contain;
-  background: radial-gradient(120% 70% at 50% 0%, #fbf6ec 0%, #efe4cf 60%, #e4d4b8 100%);
-  padding: calc(env(safe-area-inset-top) + 28px) 16px calc(env(safe-area-inset-bottom) + 24px); }
-.shelf-head { text-align: center; margin-bottom: 22px; }
-.logo b { display: block; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; font-size: 44px; line-height: 1; letter-spacing: .08em; }
-.logo span { display: block; font-weight: 800; letter-spacing: .3em; text-transform: uppercase; font-size: 12px; color: var(--ink2); margin-top: 6px; }
-.shelf-head p { margin: 12px 0 0; color: var(--ink2); font-weight: 700; font-size: 14px; }
-#boxes { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 22px; max-width: 900px; margin: 0 auto; }
-.box { position: relative; display: block; width: 100%; text-align: left; padding: 0; border-radius: 10px; overflow: hidden; background: var(--paper);
-  box-shadow: 0 1px 0 #fff inset, 0 14px 28px rgba(80,55,30,.22), 0 3px 0 #d9c6a4; transition: transform .3s cubic-bezier(.2,1.4,.4,1); }
-.box:active { transform: scale(.98); }
-.box.opening { transform: translateY(-6px) scale(1.02); }
-.box .lid { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; color: #fff;
-  background: linear-gradient(90deg, var(--b1), var(--b2)); font-weight: 800; font-size: 12px; letter-spacing: .04em; }
-.box .lid .jp { font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; font-size: 15px; letter-spacing: .12em; }
-.box .art { aspect-ratio: 13 / 10; background: linear-gradient(180deg, color-mix(in srgb, var(--b2) 35%, #fff) 0%, #fdf8ef 100%); display: grid; place-items: center; }
-.box .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.box .painting { color: var(--ink2); font-weight: 700; font-size: 13px; animation: breathe 1.4s ease-in-out infinite; }
-@keyframes breathe { 50% { opacity: .4; } }
-.box .label { padding: 10px 14px 14px; border-top: 1px dashed #dccfb8; }
-.box .label b { display: block; font-size: 18px; }
-.box .label small { display: block; color: var(--ink2); font-weight: 600; font-size: 13px; margin-top: 2px; }
-.box .meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
-.box .meta em { font-style: normal; font-size: 11.5px; font-weight: 800; padding: 3px 8px; border-radius: 99px; background: var(--paper2); color: var(--ink2); }
-.box.done .meta em:first-child { background: var(--red); color: #fff; }
-.box .meta em.secret { background: #e3ecd2; color: #4f6b35; }
-.shelf-foot { text-align: center; margin-top: 26px; }
-button.ghost { background: transparent; color: var(--ink2); padding: 8px 12px; }
+/* ── shelf (the room itself is 3D; this is only the overlay) */
+#shelf { position: fixed; inset: 0; pointer-events: none; }
+.shelf-head { position: absolute; top: calc(env(safe-area-inset-top) + 14px); left: 0; right: 0; text-align: center; }
+.logo { display: inline-block; padding: 10px 22px 9px; border-radius: 14px; background: rgba(251,246,236,.82); box-shadow: 0 6px 22px rgba(70,45,25,.18); }
+.logo b { display: block; font-family: "Hiragino Mincho ProN", "Yu Mincho", serif; font-size: 30px; line-height: 1; letter-spacing: .1em; }
+.logo span { display: block; font-weight: 800; letter-spacing: .32em; text-transform: uppercase; font-size: 10.5px; color: var(--ink2); margin-top: 4px; }
+#shelfLabels { position: absolute; inset: 0; overflow: hidden; }
+.tag { position: absolute; left: 0; top: 0; pointer-events: auto; padding: 6px 12px 7px; border-radius: 10px; background: rgba(251,246,236,.94);
+  box-shadow: 0 4px 14px rgba(60,40,20,.22), inset 0 0 0 1px rgba(160,120,80,.25); text-align: center; white-space: nowrap; }
+.tag b { display: block; font-size: 13.5px; }
+.tag span { display: flex; gap: 4px; justify-content: center; margin-top: 3px; }
+.tag em { font-style: normal; font-size: 10.5px; font-weight: 800; padding: 1px 7px; border-radius: 99px; background: var(--paper2); color: var(--ink2); }
+.tag.done em:first-child { background: var(--red); color: #fff; }
+.tag em.secret { background: #e3ecd2; color: #4f6b35; }
+.shelf-foot { position: absolute; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 16px); display: flex; gap: 8px; }
+.shelf-foot button { pointer-events: auto; }
+#fade { position: fixed; inset: 0; background: #f3e8d4; opacity: 0; pointer-events: none; transition: opacity .55s ease; z-index: 8; }
+#fade.show { opacity: 1; }
 
 /* ── hud */
 #top { position: fixed; left: 0; right: 0; top: 0; padding: calc(env(safe-area-inset-top) + 12px) 16px 0; display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; pointer-events: none; }
@@ -78,3 +67,8 @@ button.ghost { background: transparent; color: var(--ink2); padding: 8px 12px; }
 #final .row { display: flex; gap: 8px; justify-content: center; }
 #final button { background: transparent; border-radius: 999px; padding: 9px 13px; box-shadow: inset 0 0 0 1.5px #dccfb8; }
 .evening #backBtn, .evening #muteBtn { background: rgba(247,240,226,.85); }
+@media (max-width: 520px) {
+  .tag { padding: 4px 10px 5px; }
+  .tag b { font-size: 12.5px; }
+  .tag em { font-size: 10px; }
+}

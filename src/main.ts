@@ -12,25 +12,34 @@ import { SCENES } from './scenes';
 import type { SceneDef } from './scenes/types';
 import { Snapshot, Stage } from './stage/stage';
 import { $ } from './ui/dom';
-import { renderShelf } from './ui/shelf';
+import { ShelfView } from './ui/shelf';
 
 const stage = new Stage($('c') as HTMLCanvasElement);
 const snap = new Snapshot();
 let session: Session | null = null;
 
-function showShelf() {
-  session?.close(); session = null;
-  $('shelf').classList.add('show');
-  renderShelf(SCENES, snap, openScene);
+const shelf = new ShelfView(stage, snap, (def) => openScene(def));
+/** Fade to paper, swap views, fade back. */
+function through(swap: () => void) {
+  const f = $('fade');
+  if (f.classList.contains('show')) { swap(); requestAnimationFrame(() => f.classList.remove('show')); return; }
+  f.classList.add('show');
+  setTimeout(() => { swap(); requestAnimationFrame(() => f.classList.remove('show')); }, 560);
+}
+function showShelf(fade = true) {
+  const go = () => { session?.close(); session = null; $('shelf').classList.add('show'); shelf.show(SCENES); };
+  fade ? through(go) : go();
 }
 function openScene(def: SceneDef) {
   audio(); sfx.open();
-  session?.close();
-  session = new Session(stage, snap, def);
-  $('shelf').classList.remove('show');
+  through(() => {
+    shelf.hide(); session?.close();
+    session = new Session(stage, snap, def);
+    $('shelf').classList.remove('show');
+  });
 }
 
-function syncMute() { for (const id of ['muteBtn', 'muteBtn2']) $(id).textContent = save.muted ? (id === 'muteBtn' ? '🔇' : '🔇 Dźwięk wyłączony') : (id === 'muteBtn' ? '🔊' : '🔊 Dźwięk włączony'); }
+function syncMute() { for (const id of ['muteBtn', 'muteBtn2']) $(id).textContent = save.muted ? '🔇' : '🔊'; }
 function toggleMute() { save.muted = !save.muted; setMuted(save.muted); persist(); syncMute(); }
 setMuted(save.muted); syncMute();
 $('muteBtn').onclick = toggleMute; $('muteBtn2').onclick = toggleMute;
@@ -48,13 +57,12 @@ if (location.hash.includes('auto')) { $('autoBtn').hidden = false; $('autoBtn').
 let last = performance.now(), time = 0;
 stage.renderer.setAnimationLoop((now) => {
   const dt = Math.min((now - last) / 1000, 0.05); last = now; time += dt;
-  if (!session) return;
-  session.update(dt, time);
+  if (session) session.update(dt, time); else shelf.update(dt, time);
   stage.render(dt);
-  document.body.classList.toggle('evening', session.ctx.evening > 0.5);
+  document.body.classList.toggle('evening', (session ? session.ctx.evening : shelf.evening) > 0.5);
 });
 
-showShelf();
+showShelf(false);
 const dev = { stage, get session() { return session; }, open: (id: string) => { const d = SCENES.find((s) => s.id === id); if (d) openScene(d); }, auto: () => session?.runAuto() };
 (window as unknown as { __hk: typeof dev }).__hk = dev;
 

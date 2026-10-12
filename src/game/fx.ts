@@ -17,6 +17,12 @@ export const PETAL = spriteTex((c, s) => {
   c.fillStyle = '#f6b9c8'; c.beginPath(); c.ellipse(s / 2, s / 2, s * 0.42, s * 0.26, 0.5, 0, 7); c.fill();
   c.fillStyle = '#fde3ea'; c.beginPath(); c.ellipse(s * 0.42, s * 0.44, s * 0.2, s * 0.1, 0.5, 0, 7); c.fill();
 }, 32);
+const LEAF = spriteTex((c, s) => {
+  // a little five-lobed maple leaf, white so the sprite colour tints it
+  c.fillStyle = '#ffffff'; c.beginPath();
+  for (let i = 0; i <= 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, r = i % 2 ? s * 0.18 : s * 0.46; c.lineTo(s / 2 + Math.cos(a) * r, s / 2 + Math.sin(a) * r); }
+  c.fill(); c.fillRect(s / 2 - 1, s / 2, 2, s * 0.45);
+}, 32);
 const RING = spriteTex((c, s) => {
   c.strokeStyle = 'rgba(255,255,255,.9)'; c.lineWidth = s * 0.06; c.beginPath(); c.arc(s / 2, s / 2, s * 0.4, 0, 7); c.stroke();
 });
@@ -79,9 +85,21 @@ export class Fx {
     }, 0.07);
     p.v.set(rand(0.15, 0.35), -rand(0.12, 0.22), rand(0.05, 0.25));
   }
-  firefly(at: THREE.Vector3) {
+  /** A falling autumn leaf, tinted. */
+  leaf(at: THREE.Vector3, color: string) {
+    const spin = rand(-4, 4);
+    const p = this.sprite(LEAF, color, at, rand(7, 11), (f, dt, k) => {
+      if (f.o.position.y > 0.03) {
+        f.o.position.addScaledVector(f.v, dt); f.o.position.x += Math.sin(f.age * 1.7 + f.seed) * dt * 0.25;
+        (f.o.material as THREE.SpriteMaterial).rotation += dt * spin;
+      }
+      f.o.material.opacity = Math.min(1, f.age * 3) * (k > 0.85 ? (1 - k) / 0.15 : 1);
+    }, 0.09);
+    p.v.set(rand(-0.1, 0.25), -rand(0.18, 0.3), rand(0.05, 0.25));
+  }
+  firefly(at: THREE.Vector3, color = '#d8ff7a') {
     const home = at.clone();
-    const p = this.sprite(SOFT, '#d8ff7a', at, rand(6, 10), (f, dt, k) => {
+    const p = this.sprite(SOFT, color, at, rand(6, 10), (f, dt, k) => {
       const t = f.age;
       f.o.position.set(home.x + Math.sin(t * 0.7 + f.seed) * 0.5, home.y + Math.sin(t * 0.9 + f.seed * 2) * 0.25 + k * 0.4, home.z + Math.cos(t * 0.6 + f.seed) * 0.5);
       const blink = 0.5 + 0.5 * Math.sin(t * 3 + f.seed * 3);
@@ -89,6 +107,14 @@ export class Fx {
       f.o.scale.setScalar(0.07 + 0.05 * blink);
     }, 0.08, true);
     return p;
+  }
+  /** A dust mote drifting slowly in a sunbeam; `vis()` scales its opacity (no motes at night). */
+  mote(at: THREE.Vector3, vis: () => number) {
+    const p = this.sprite(SOFT, '#fff6dc', at, rand(6, 10), (f, dt, k) => {
+      f.o.position.addScaledVector(f.v, dt); f.o.position.y += Math.sin(f.age * 0.8 + f.seed) * dt * 0.03;
+      f.o.material.opacity = 0.5 * Math.sin(Math.PI * k) * vis();
+    }, rand(0.025, 0.05), true);
+    p.v.set(rand(-0.06, 0.06), rand(-0.03, 0.02), rand(-0.02, 0.02));
   }
   ripple(at: THREE.Vector3) {
     const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ map: RING, transparent: true, opacity: 0, depthWrite: false, color: '#dfe8ef' }));
