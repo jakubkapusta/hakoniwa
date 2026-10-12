@@ -1,7 +1,7 @@
 // Small particle effects: dust puffs, steam, petals, rain with ripples, fireflies.
 import * as THREE from 'three';
 import { newCanvas } from '../core/paint';
-import { rand } from '../core/util';
+import { mix as mixHex, rand } from '../core/util';
 
 const V3 = THREE.Vector3;
 function spriteTex(draw: (c: CanvasRenderingContext2D, s: number) => void, size = 64) {
@@ -67,11 +67,11 @@ export class Fx {
       p.v.set(rand(-1, 1), rand(0.4, 1.6), rand(-1, 1)).multiplyScalar(0.8);
     }
   }
-  steam(at: THREE.Vector3) {
-    const p = this.sprite(SOFT, '#ffffff', at.clone().add(new V3(rand(-0.08, 0.12), 0, rand(-0.08, 0.08))), rand(2.2, 3), (f, dt, k) => {
+  steam(at: THREE.Vector3, color = '#ffffff', size = 1) {
+    const p = this.sprite(SOFT, color, at.clone().add(new V3(rand(-0.08, 0.12), 0, rand(-0.08, 0.08))), rand(2.2, 3), (f, dt, k) => {
       f.o.position.y += dt * 0.32; f.o.position.x += Math.sin(f.age * 1.3 + f.seed) * dt * 0.08;
-      f.o.material.opacity = 0.55 * Math.sin(Math.PI * Math.min(1, k * 1.4)) * (1 - k * 0.4); f.o.scale.setScalar(0.12 + k * 0.55);
-    }, 0.12);
+      f.o.material.opacity = 0.55 * Math.sin(Math.PI * Math.min(1, k * 1.4)) * (1 - k * 0.4); f.o.scale.setScalar((0.12 + k * 0.55) * size);
+    }, 0.12 * size);
     return p;
   }
   petal(at: THREE.Vector3) {
@@ -84,6 +84,38 @@ export class Fx {
       f.o.material.opacity = Math.min(1, f.age * 3) * (k > 0.85 ? (1 - k) / 0.15 : 1);
     }, 0.07);
     p.v.set(rand(0.15, 0.35), -rand(0.12, 0.22), rand(0.05, 0.25));
+  }
+  /** A snowflake drifting down; settles and fades on the ground. */
+  snow(at: THREE.Vector3) {
+    const p = this.sprite(SOFT, '#ffffff', at, rand(9, 14), (f, dt, k) => {
+      if (f.o.position.y > 0.02) { f.o.position.addScaledVector(f.v, dt); f.o.position.x += Math.sin(f.age * 1.3 + f.seed) * dt * 0.12; }
+      f.o.material.opacity = 0.9 * Math.min(1, f.age * 2) * (k > 0.8 ? (1 - k) / 0.2 : 1);
+    }, rand(0.035, 0.06));
+    p.v.set(rand(0.02, 0.08), -rand(0.25, 0.4), rand(-0.03, 0.05));
+  }
+  /** A firework: a rising spark, then a sphere of coloured sparks that droop and fade. */
+  firework(from: THREE.Vector3, to: THREE.Vector3, color: string, onBurst?: () => void) {
+    const r = this.sprite(SOFT, '#fff2c8', from.clone(), 1.1, (f, _dt, k) => {
+      f.o.position.lerpVectors(from, to, 1 - (1 - k) * (1 - k)); f.o.material.opacity = 0.9;
+      if (k >= 0.999) this.burst(to, color, onBurst);
+    }, 0.09, true);
+    void r;
+  }
+  private burst(at: THREE.Vector3, color: string, onBurst?: () => void) {
+    onBurst?.();
+    const flash = this.sprite(SOFT, color, at.clone(), 0.35, (f, _dt, k) => { f.o.material.opacity = 0.45 * (1 - k); f.o.scale.setScalar(0.5 + k * 0.6); }, 0.5, true);
+    void flash;
+    const n = 90, alt = mixHex(color, '#ffffff', 0.5);
+    for (let i = 0; i < n; i++) {
+      const u = rand(-1, 1), a = rand(0, Math.PI * 2), s = Math.sqrt(1 - u * u);
+      const dir = new V3(s * Math.cos(a), u, s * Math.sin(a)), sp = rand(1.9, 2.3);
+      const p = this.sprite(SOFT, i % 3 ? color : alt, at.clone(), rand(1.4, 2.0), (f, dt, k) => {
+        f.o.position.addScaledVector(f.v, dt); f.v.multiplyScalar(1 - dt * 1.6); f.v.y -= dt * 0.9;
+        const tw = k > 0.6 ? 0.5 + 0.5 * Math.sin(f.age * 40 + f.seed * 10) : 1;
+        f.o.material.opacity = (1 - k) * tw; f.o.scale.setScalar(0.14 * (1 - k * 0.6));
+      }, 0.14, true);
+      p.v.copy(dir).multiplyScalar(sp);
+    }
   }
   /** A falling autumn leaf, tinted. */
   leaf(at: THREE.Vector3, color: string) {

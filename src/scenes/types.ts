@@ -32,6 +32,8 @@ export interface SceneCtx {
   evening: number;
   /** true after the last piece (the scene is alive). */
   done: boolean;
+  /** true for the mini copies on the shelf: no one-shot sounds. */
+  quiet?: boolean;
   /** Switch an ambient layer (0..1). */
   sound(layer: Layer, level: number): void;
 }

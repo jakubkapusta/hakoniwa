@@ -18,13 +18,12 @@ export function buildWall(h: number): THREE.Mesh {
     c.fillStyle = '#e8d9bb'; c.fillRect(0, 0, 20, 20);
     mottle(c, 0, 0, 20, 20, ['#efe3c8', '#e0cfae', '#ecdcc0'], 90, [0.6, 1.6], 0.35);
     for (let i = 0; i < 400; i++) dab(c, rand(0, 20), rand(0, 20), rand(0.02, 0.05), pick(['#cdb894', '#f4ead6']), 0.5);
-    // a wooden rail (nageshi) high on the wall
-    c.fillStyle = '#7a5538'; c.fillRect(0, 2.2, 20, 0.35); c.fillStyle = '#946a48'; c.fillRect(0, 2.2, 20, 0.08);
-    c.fillStyle = 'rgba(70,45,25,.18)'; c.fillRect(0, 2.55, 20, 0.25);
     return paperMat(toTex(cv));
   });
-  const m = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), mat);
-  m.position.set(0, h / 2 + 1.2, SHELF.wallZ); m.receiveShadow = true;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(20, h + 12), mat);
+  m.position.set(0, (h + 12) / 2 - 2.5, SHELF.wallZ); m.receiveShadow = true;
+  // a wooden rail (nageshi) high on the wall, above the scroll
+  const rail = new THREE.Mesh(new THREE.BoxGeometry(20, 0.22, 0.08), plainM(K('nageshi'), '#7a5538')); rail.position.set(0, h + 3.6 - ((h + 12) / 2 - 2.5), 0.04); rail.receiveShadow = true; m.add(rail);
   return m;
 }
 export function buildFloor(): THREE.Mesh {

@@ -46,6 +46,8 @@ export class ShelfView {
   private fx?: Fx;
   private ambience = new Ambience();
   private lampLight = new THREE.PointLight('#ffc98a', 0, 14, 1.3);
+  /** A warm fill that travels with the scroll, so lower shelves aren't lost in the dark at night. */
+  private fill = new THREE.PointLight('#ffcf9a', 0, 12, 1.2);
   private rows = 1;
   /** 1 column on a phone held upright (bigger dioramas, scroll), 2 otherwise. */
   private cols = 2;
@@ -87,7 +89,7 @@ export class ShelfView {
     st.setLights(keys); st.shadowBox(cx, cy, Math.max(7, H * 0.7));
     const sunDir = new V3(...sunPos).sub(new V3(cx, cy, 0)).normalize();
     const win = buildWindowShadow(new V3(cx + 0.6, cy - 0.4, 0).addScaledVector(sunDir, 8)); win.lookAt(new V3(...sunPos).addScaledVector(sunDir, 10));
-    st.scene.add(buildWall(H), buildFloor(), buildShelf(this.rows, W), win, this.lampLight);
+    st.scene.add(buildWall(H), buildFloor(), buildShelf(this.rows, W), win, this.lampLight, this.fill);
     const lx = cols === 1 ? 1.35 : 2.6, sx = cols === 1 ? -1.25 : -2.4;
     const lamp = buildLamp(); lamp.position.set(lx, H + 2.1, 0.9); st.scene.add(lamp); this.decos.push(lamp);
     this.lampLight.position.set(lx, H + 1.5, 1.6);
@@ -114,8 +116,10 @@ export class ShelfView {
       let root: THREE.Object3D, live: Item['live'];
       if (save.done) {
         const { g, placed } = buildDiorama(def, save.secret);
-        const ctx: SceneCtx = { scene: g as unknown as THREE.Scene, fx: new Fx(g as unknown as THREE.Scene), placed, evening: this.evening, done: true, sound: () => {} };
+        const ctx: SceneCtx = { scene: g as unknown as THREE.Scene, fx: new Fx(g as unknown as THREE.Scene), placed, evening: this.evening, done: true, quiet: true, sound: () => {} };
         const hooks = def.setup(ctx); hooks.alive?.(ctx);
+        // lights don't shrink with the model: shorten their reach (intensity is scaled every frame in update)
+        g.traverse((o) => { const l = o as THREE.PointLight; if (l.isPointLight) l.distance *= SCALE; });
         g.scale.setScalar(SCALE); g.position.set(x, y + 0.32 * SCALE, 0.1); g.rotation.y = cols === 1 ? 0 : s % 2 ? -0.12 : 0.12;
         root = g; live = { ctx, hooks, fx: ctx.fx };
       } else {
@@ -176,10 +180,11 @@ export class ShelfView {
       this.evening += Math.sign(this.eveningTarget - this.evening) * Math.min(Math.abs(this.eveningTarget - this.evening), dt / 2.5);
       this.stage.setEvening(this.evening);
     }
-    setLampGlow(this.evening); this.lampLight.intensity = this.evening * 14;
+    setLampGlow(this.evening); this.lampLight.intensity = this.evening * 14; this.fill.intensity = this.evening * 7;
     for (const it of this.items) if (it.live) {
       const c = it.live.ctx; c.evening = this.evening;
       it.live.hooks.update?.(dt, t, c); c.placed.forEach((o) => (o as Foldable).userData.tick?.(t, c.evening)); it.live.fx.update(dt);
+      it.root.traverse((o) => { const l = o as THREE.Light; if (l.isLight) l.intensity *= SCALE * SCALE; });
     }
     this.decos.forEach((d) => d.userData.tick?.(t, this.evening));
     this.fx?.update(dt);
@@ -200,6 +205,7 @@ export class ShelfView {
       if (f.t >= 1) { const def = f.def; this.fly = undefined; this.open(def); return; }
     } else {
       cam.position.set(0, this.camY + 1.0, D + 1.25); ctl.target.set(0, this.camY - 0.1, 0);
+      this.fill.position.set(0.8, this.camY + 0.6, 3.2);
     }
     cam.lookAt(ctl.target);
     // labels under each item, on the front edge of its shelf plank

@@ -1,5 +1,5 @@
 // All sound is synthesized with Web Audio: one-shot effects plus ambient layers that pieces switch on.
-export type Layer = 'town' | 'leaves' | 'chime' | 'bubble' | 'crickets' | 'rain' | 'frogs' | 'hum' | 'crow' | 'engine' | 'stream' | 'suzu' | 'sweep';
+export type Layer = 'town' | 'leaves' | 'chime' | 'bubble' | 'crickets' | 'rain' | 'frogs' | 'hum' | 'crow' | 'engine' | 'stream' | 'suzu' | 'sweep' | 'wind' | 'waves' | 'taiko' | 'onsen' | 'crossing' | 'cicadas';
 
 let AC: AudioContext | null = null;
 let master: GainNode, noiseB: AudioBuffer;
@@ -45,6 +45,8 @@ export const sfx = {
   chime() { if (!audio()) return; const t = AC!.currentTime; pluck(t, 587.3); pluck(t + 0.13, 880); },
   finale() { if (!audio()) return; const t = AC!.currentTime; YO.slice(0, 7).forEach((f, i) => pluck(t + i * 0.17, f, 0.14)); pluck(t + 1.4, 392, 0.12); pluck(t + 1.4, 587.3, 0.1); },
   secret() { if (!audio()) return; const t = AC!.currentTime; [880, 987.8, 1174.7, 1318.5].forEach((f, i) => tone(t + i * 0.07, f, 0.5, { gain: 0.08 })); },
+  boom(far = 1) { if (!audio()) return; const t = AC!.currentTime + 0.25 * far; tone(t, 60, 1.2, { gain: 0.35, slide: 35 }); noise(t, 1.3, { freq: 400, gain: 0.3, attack: 0.01 });
+    for (let i = 0; i < 8; i++) noise(t + 0.3 + Math.random() * 0.8, 0.04, { type: 'highpass', freq: 3500, gain: 0.05 }); },
   open() { if (!audio()) return; const t = AC!.currentTime; noise(t, 0.35, { type: 'bandpass', freq: 900, q: 0.8, gain: 0.12, attack: 0.08 }); },
 };
 
@@ -67,6 +69,9 @@ class AmbientLayer {
     if (kind === 'leaves') bed('bandpass', 1800, 0.6, 0.12, 0.13);
     if (kind === 'rain') { bed('highpass', 1400, 0.4, 0.22); bed('bandpass', 500, 0.6, 0.12); }
     if (kind === 'stream') bed('bandpass', 1100, 1.5, 0.1, 0.4);
+    if (kind === 'cicadas') { bed('bandpass', 5200, 4, 0.05, 27); bed('bandpass', 4300, 5, 0.03, 19); }
+    if (kind === 'wind') { bed('bandpass', 380, 0.8, 0.22, 0.07); bed('bandpass', 900, 2, 0.05, 0.11); }
+    if (kind === 'waves') { bed('lowpass', 520, 0.6, 0.35, 0.09); bed('highpass', 2500, 0.4, 0.06, 0.09); }
     if (kind === 'hum') { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 100; const f = ac.createBiquadFilter(); f.frequency.value = 260; const g = ac.createGain(); g.gain.value = 0.025; o.connect(f).connect(g).connect(this.out); o.start(); this.srcs.push(o); }
     if (kind === 'engine') { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 46; const f = ac.createBiquadFilter(); f.frequency.value = 180; const g = ac.createGain(); g.gain.value = 0.14; o.connect(f).connect(g).connect(this.out); o.start(); this.srcs.push(o); bed('lowpass', 160, 0.8, 0.2, 9); }
   }
@@ -95,6 +100,18 @@ class AmbientLayer {
       case 'suzu': // shrine bells: a bright shaken cluster
         for (let i = 0; i < 9; i++) tone(t + i * 0.045 + Math.random() * 0.02, 2600 + Math.random() * 900, 0.35, { type: 'triangle', gain: 0.035, out });
         this.nextAt = now + 9 + Math.random() * 10; break;
+      case 'taiko': { // festival drums: don, don, ka-don
+        const hit = (at: number, f: number, g: number) => { tone(at, f, 0.5, { gain: g, slide: f * 0.6, out }); noise(at, 0.08, { freq: 500, gain: g * 0.5, out }); };
+        hit(t, 85, 0.45); hit(t + 0.45, 85, 0.4); noise(t + 0.85, 0.04, { type: 'highpass', freq: 2000, gain: 0.12, out }); hit(t + 1.05, 95, 0.5);
+        this.nextAt = now + 2.4; break;
+      }
+      case 'onsen': // a wooden bucket set down in the tiled bath hall, with its echo
+        [0, 0.18, 0.36].forEach((d, i) => tone(t + d, 410 - i * 8, 0.6, { type: 'triangle', gain: 0.12 / (1 + i * 1.6), out }));
+        if (Math.random() < 0.5) noise(t + 0.5, 0.7, { type: 'bandpass', freq: 1800, q: 0.6, gain: 0.05, attack: 0.05, out });
+        this.nextAt = now + 4 + Math.random() * 6; break;
+      case 'crossing': // railway crossing bell
+        tone(t, 760, 0.3, { type: 'square', gain: 0.035, out }); tone(t, 1520, 0.15, { gain: 0.02, out });
+        this.nextAt = now + 0.52; break;
       case 'sweep': // a bamboo broom on gravel
         noise(t, 0.45, { type: 'bandpass', freq: 3200, q: 0.7, gain: 0.07, attack: 0.15, out });
         this.nextAt = now + 1.6 + Math.random() * 0.6; break;
