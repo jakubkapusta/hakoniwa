@@ -1,5 +1,5 @@
 // All sound is synthesized with Web Audio: one-shot effects plus ambient layers that pieces switch on.
-export type Layer = 'town' | 'leaves' | 'chime' | 'bubble' | 'crickets' | 'rain' | 'frogs' | 'hum' | 'crow' | 'engine' | 'stream' | 'suzu' | 'sweep' | 'wind' | 'waves' | 'taiko' | 'onsen' | 'crossing' | 'cicadas' | 'birds' | 'mill' | 'bonsho';
+export type Layer = 'town' | 'leaves' | 'chime' | 'bubble' | 'crickets' | 'rain' | 'frogs' | 'hum' | 'crow' | 'engine' | 'stream' | 'suzu' | 'sweep' | 'wind' | 'waves' | 'taiko' | 'onsen' | 'crossing' | 'cicadas' | 'birds' | 'mill' | 'bonsho' | 'sizzle' | 'train';
 
 let AC: AudioContext | null = null;
 let master: GainNode, noiseB: AudioBuffer;
@@ -50,6 +50,9 @@ export const sfx = {
   /** Shishi-odoshi: the bamboo tube tips over and knocks on its stone. */
   bamboo() { if (!audio()) return; const t = AC!.currentTime; noise(t, 0.05, { type: 'bandpass', freq: 1200, q: 4, gain: 0.35 }); tone(t, 520, 0.25, { type: 'triangle', gain: 0.22, slide: 470 }); tone(t, 1040, 0.08, { gain: 0.06 });
     noise(t + 0.02, 0.4, { type: 'bandpass', freq: 2400, q: 0.8, gain: 0.05, attack: 0.03 }); },
+  /** A temple bell struck by its log: a deep hum with a long tail. */
+  kane() { if (!audio()) return; const t = AC!.currentTime; noise(t, 0.12, { freq: 300, gain: 0.25 });
+    [[98, 0.22, 8], [196.5, 0.08, 6], [247, 0.05, 5], [294.5, 0.04, 4], [412, 0.025, 2.5]].forEach(([f, g, d]) => tone(t, f, d, { type: f < 100 ? 'triangle' : 'sine', gain: g, attack: 0.008 })); },
   open() { if (!audio()) return; const t = AC!.currentTime; noise(t, 0.35, { type: 'bandpass', freq: 900, q: 0.8, gain: 0.12, attack: 0.08 }); },
 };
 
@@ -75,6 +78,8 @@ class AmbientLayer {
     if (kind === 'cicadas') { bed('bandpass', 5200, 4, 0.05, 27); bed('bandpass', 4300, 5, 0.03, 19); }
     if (kind === 'wind') { bed('bandpass', 380, 0.8, 0.22, 0.07); bed('bandpass', 900, 2, 0.05, 0.11); }
     if (kind === 'waves') { bed('lowpass', 520, 0.6, 0.35, 0.09); bed('highpass', 2500, 0.4, 0.06, 0.09); }
+    if (kind === 'sizzle') bed('highpass', 3200, 0.5, 0.05, 2.5);
+    if (kind === 'train') bed('lowpass', 140, 0.8, 0.3, 6);
     if (kind === 'mill') { bed('bandpass', 1500, 0.9, 0.09, 0.6); bed('lowpass', 300, 0.7, 0.1, 0.25); }
     if (kind === 'hum') { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 100; const f = ac.createBiquadFilter(); f.frequency.value = 260; const g = ac.createGain(); g.gain.value = 0.025; o.connect(f).connect(g).connect(this.out); o.start(); this.srcs.push(o); }
     if (kind === 'engine') { const o = ac.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 46; const f = ac.createBiquadFilter(); f.frequency.value = 180; const g = ac.createGain(); g.gain.value = 0.14; o.connect(f).connect(g).connect(this.out); o.start(); this.srcs.push(o); bed('lowpass', 160, 0.8, 0.2, 9); }
@@ -116,6 +121,12 @@ class AmbientLayer {
       case 'crossing': // railway crossing bell
         tone(t, 760, 0.3, { type: 'square', gain: 0.035, out }); tone(t, 1520, 0.15, { gain: 0.02, out });
         this.nextAt = now + 0.52; break;
+      case 'sizzle': // fat dripping on the coals
+        for (let i = 0; i < 3; i++) noise(t + Math.random() * 0.2, 0.015, { type: 'highpass', freq: 2500 + Math.random() * 3000, gain: 0.06, out });
+        this.nextAt = now + 0.1 + Math.random() * 0.3; break;
+      case 'train': // ta-tan, ta-tan over the rail joints
+        [0, 0.11].forEach((d) => { noise(t + d, 0.05, { type: 'bandpass', freq: 650, q: 2, gain: 0.3, out }); tone(t + d, 90, 0.08, { gain: 0.15, out }); });
+        this.nextAt = now + 0.42; break;
       case 'birds': // a bush warbler (uguisu): a long whistle, then a quick 'hokekyo'
         if (Math.random() < 0.6) { tone(t, 1250, 0.9, { gain: 0.035, attack: 0.25, slide: 1300 }); [0, 0.12, 0.3].forEach((d, i) => tone(t + 1.05 + d, [1900, 2500, 1800][i], i === 2 ? 0.35 : 0.1, { gain: 0.04, slide: [2300, 2200, 1650][i] })); }
         else for (let i = 0; i < 3 + Math.floor(Math.random() * 4); i++) tone(t + i * 0.13, 3200 + Math.random() * 900, 0.07, { gain: 0.02, slide: 2600 }); // sparrows

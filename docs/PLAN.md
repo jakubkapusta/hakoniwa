@@ -3,7 +3,7 @@
 > Składasz kartonową dioramę jak japoński zestaw modelarski. Kiedy kładziesz ostatni kawałek, robi się wieczór i miniatura ożywa.
 
 **Mieszanka:** zestaw modelarski z papieru (jak japońskie Sankei Miniatuart) × spokojne puzzle × kolekcja miniatur
-**Status:** M1 i M2 zrobione (2026-10-12), M3 w toku: osiem scenek (2026-10-13), czekamy na test właściciela.
+**Status:** M1 i M2 zrobione (2026-10-12), M3 w toku: dziesięć scenek (2026-10-13), czekamy na test właściciela.
 **Prototyp:** `~/code/plany/hakoniwa/prototyp/` (jeden plik, punkt wyjścia dla tej gry).
 
 *Hakoniwa* to po japońsku „ogród w pudełku”, czyli miniaturowy krajobraz, który się układa i podziwia.
@@ -113,7 +113,7 @@ Nadzorca sprawdza wynik po każdym z nich.
 - **M1: Jedna scenka na serio** (zrobione 2026-10-12). Repozytorium, format danych scenki (`src/scenes/types.ts`), Yatai na tym formacie, bloom wieczorem, dźwięk z warstwami, ukryty tanuki, zapis po każdym kawałku, PWA.
 - **M2 (szkielet zrobiony 2026-10-12):** półka z pudełkami (okładka renderowana z gotowej dioramy), druga scenka „Przystanek w deszczu” (deszcz z kręgami na kałużach, autobus kursujący w finale, świetliki, kappa jako sekret). **STOP: właściciel testuje na telefonie.** Czy składanie odpręża, czy finał wzrusza i czy grafika ma już klimat. 
 - **M2 (zrobione 2026-10-12):** półka jako pokój w 3D (ściana, tatami, regał, światło przez shoji, lampa, ozdoby), gotowe dioramy stoją na półce jako żywe miniatury, pudełka z okładką, pora dnia według zegara, przelot kamery przy otwieraniu; trzecia scenka „Kapliczka Inari” (jesień, torii, kitsunebi); skill `nowa-scenka` do dodawania scenek. Wcześniej, po teście M1: styl anime (cel shading, kontur, nowe pędzle), naprawa białych błysków, przeciąganie bez stukania.
-- **M3 (w toku):** kolejne scenki skillem `nowa-scenka`: Łaźnia zimą (śnieg, para z komina), Letni festiwal (złote rybki, lampiony, taiko, fajerwerki), Stacyjka nad morzem (falujące morze, latarnia morska, przejazd, pociąg). 2026-10-13, po uwadze właściciela, że kilkanaście kawałków schodzi za szybko: dwie większe scenki po 32 kawałki w 8 etapach, Herbaciarnia w ogrodzie (staw z karpiami, mostek, wodospad, shishi-odoshi, glicynia, świetliki) i Wiejska zagroda (chata pod strzechą, koło wodne, pola ryżu, księżyc wschodzący w finale). Do zrobienia: wypychanie z arkusza, tryb mistrza, ozdobne wybory, uliczka dioram.
+- **M3 (w toku):** kolejne scenki skillem `nowa-scenka`: Łaźnia zimą (śnieg, para z komina), Letni festiwal (złote rybki, lampiony, taiko, fajerwerki), Stacyjka nad morzem (falujące morze, latarnia morska, przejazd, pociąg). 2026-10-13, po uwadze właściciela, że kilkanaście kawałków schodzi za szybko: dwie większe scenki po 32 kawałki w 8 etapach, Herbaciarnia w ogrodzie (staw z karpiami, mostek, wodospad, shishi-odoshi, glicynia, świetliki) i Wiejska zagroda (chata pod strzechą, koło wodne, pola ryżu, księżyc wschodzący w finale), potem jeszcze dwie tej wielkości: Uliczka z barami (knajpki pod wiaduktem, neon, grill, pociąg nad dachami) i Świątynia w Nowy Rok (pagoda składana piętro po piętrze, dzwonnica, śnieg, dzwon o północy). Do zrobienia: wypychanie z arkusza, tryb mistrza, ozdobne wybory, uliczka dioram.
 - **M3: Szlif.** Pozostałe scenki, pory dnia i pogoda na półce, ulica miniatur, wybrane pomysły z listy wyżej, tryb offline.
 
 ## Ryzyka i otwarte pytania
