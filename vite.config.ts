@@ -36,6 +36,6 @@ function serviceWorker(): Plugin {
 
 export default defineConfig({
   base: './',
-  build: { target: 'es2020', assetsInlineLimit: 0, chunkSizeWarningLimit: 900 }, // three.js alone is ~600 kB
+  build: { target: 'es2020', assetsInlineLimit: 0, chunkSizeWarningLimit: 1200 }, // three.js alone is ~600 kB
   plugins: [serviceWorker()],
 });
