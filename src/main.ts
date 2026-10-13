@@ -11,7 +11,7 @@ import { persist, save, sceneSave } from './game/save';
 import { SCENES } from './scenes';
 import type { SceneDef } from './scenes/types';
 import { Snapshot, Stage } from './stage/stage';
-import { $ } from './ui/dom';
+import { $, ICON } from './ui/dom';
 import { ShelfView } from './ui/shelf';
 
 const stage = new Stage($('c') as HTMLCanvasElement);
@@ -39,7 +39,7 @@ function openScene(def: SceneDef) {
   });
 }
 
-function syncMute() { for (const id of ['muteBtn', 'muteBtn2']) $(id).textContent = save.muted ? '🔇' : '🔊'; }
+function syncMute() { for (const id of ['muteBtn', 'muteBtn2']) { $(id).innerHTML = save.muted ? ICON.mute : ICON.sound; $(id).title = save.muted ? 'Włącz dźwięk' : 'Wycisz'; } }
 function toggleMute() { save.muted = !save.muted; setMuted(save.muted); persist(); syncMute(); }
 setMuted(save.muted); syncMute();
 $('muteBtn').onclick = toggleMute; $('muteBtn2').onclick = toggleMute;
@@ -52,6 +52,7 @@ $('againBtn').onclick = () => {
   st.placed = []; st.done = false; persist();
   openScene(def);
 };
+$('backBtn').innerHTML = `${ICON.back}<span>Półka</span>`; $('againBtn').innerHTML = `${ICON.again}<span>Od nowa</span>`; $('autoBtn').innerHTML = `${ICON.play}<span>Auto</span>`;
 if (location.hash.includes('auto')) { $('autoBtn').hidden = false; $('autoBtn').onclick = () => session?.runAuto(); }
 
 let last = performance.now(), time = 0;

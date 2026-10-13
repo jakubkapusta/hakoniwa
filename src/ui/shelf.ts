@@ -9,7 +9,7 @@ import type { Foldable } from '../kit/kit';
 import { clamp, ease, rand, reseed } from '../core/util';
 import type { LightKey, SceneCtx, SceneDef, SceneHooks } from '../scenes/types';
 import type { Snapshot, Stage } from '../stage/stage';
-import { $ } from './dom';
+import { $, timeLabel } from './dom';
 import { BOX, SHELF, buildBooks, buildFloor, buildKitBox, buildLamp, buildNeko, buildPlant, buildScroll, buildShelf, buildTeapot, buildWall, buildWindowShadow, setLampGlow } from './room';
 
 const V3 = THREE.Vector3;
@@ -67,7 +67,7 @@ export class ShelfView {
     $('timeBtn').onclick = () => { this.eveningTarget = this.eveningTarget > 0.5 ? 0 : 1; this.syncTimeBtn(); };
   }
   private colsFor() { return innerWidth / innerHeight < 0.8 ? 1 : 2; }
-  private syncTimeBtn() { $('timeBtn').textContent = this.eveningTarget ? '☀ Dzień' : '☾ Wieczór'; }
+  private syncTimeBtn() { $('timeBtn').innerHTML = timeLabel(this.eveningTarget > 0.5); }
 
   show(scenes: SceneDef[]) {
     const st = this.stage;
@@ -132,8 +132,9 @@ export class ShelfView {
       st.scene.add(root);
       const label = document.createElement('button');
       label.className = 'tag' + (save.done ? ' done' : '');
-      const state = save.done ? 'gotowe ✓' : save.placed.length ? `w trakcie · ${save.placed.length}/${total}` : 'nowy zestaw';
-      label.innerHTML = `<b>${def.title}</b><span><em>${state}</em>${save.secret ? '<em class="secret">sekret ✓</em>' : ''}</span>`;
+      // a wooden name plaque: the title, then a red seal when it's done (and a green one for the secret), else the count
+      const state = save.done ? '<em class="seal">済</em><em class="word">gotowe</em>' : save.placed.length ? `<em class="count">${save.placed.length} / ${total}</em>` : '<em class="word">nowy zestaw</em>';
+      label.innerHTML = `<small>${def.jp}</small><b>${def.title}</b><span>${state}${save.secret ? '<em class="seal green" title="sekret znaleziony">秘</em>' : ''}</span>`;
       label.onclick = () => this.flyTo(root, def);
       labels.appendChild(label);
       this.items.push({ def, root, anchor: new V3(x, y, SHELF.depth / 2), label, live });

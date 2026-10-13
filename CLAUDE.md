@@ -37,6 +37,10 @@ URL hash `#auto` shows a "▶ Auto" button that assembles the open scene. Dev he
 
 Anime / Ghibli look, procedural only. Flat tones with crisp edges, not noise: `foliage` (layered puffs: shade → mid → light → highlights, lit from the upper left), `tufts`/`meadow` for grass, cel-shaded cumulus in `paintSky` (shadow silhouette, lit body shifted up-left, bright crowns, flat bottom). Props and characters get a dark ink contour (`cutoutAsset` ink); backgrounds (hills, forest, town) get none, like painted Ghibli backgrounds. Keep paper grain subtle. Day bloom stays tiny (it hazes the sky).
 
+## UI style (owner, 2026-10-13: plaques and buttons looked off-theme)
+
+The DOM overlay matches the paper kit: buttons, panels, cards and the toast are washi paper (`--washi` SVG fibre texture on warm paper) with a thin ink double rule (stacked inset box-shadows), small radii, no pills. Shelf labels are wooden name plaques (CSS wood grain along the board, two brass nails) with hanko seals (`済` red = done, `秘` green = secret). Icons are ink-line SVGs from `ICON` in `src/ui/dom.ts`, never emoji. Japanese text in `--mincho`.
+
 ## Rules that bite
 
 - **Never put a light exactly on a surface** (distance 0 → NaN on mobile GPUs → white flashes over the whole screen through bloom; the bus headlight did this). `InkPass` scrubs NaN/Inf as a safety net.

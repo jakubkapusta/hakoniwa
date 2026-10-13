@@ -8,7 +8,7 @@ import type { SceneCtx, SceneDef, SceneHooks } from '../scenes/types';
 import type { Snapshot, Stage } from '../stage/stage';
 import { Fx } from './fx';
 import { persist, save, sceneSave } from './save';
-import { $, toast } from '../ui/dom';
+import { $, timeLabel, toast } from '../ui/dom';
 
 const V3 = THREE.Vector3;
 interface Info { center: THREE.Vector3; size: THREE.Vector3; radius: number; offset: THREE.Vector3 }
@@ -281,7 +281,7 @@ export class Session {
     $('finalJp').textContent = fresh ? 'おつかれさま · gotowe!' : this.def.jp;
     $('finalTitle').textContent = this.def.title;
     $('finalSecret').innerHTML = st.secret ? `Sekret: <b>${this.def.secret.name}</b> ✓` : 'Gdzieś ukrył się sekret. Obróć dioramę i stuknij go.';
-    $('duskBtn').textContent = this.eveningTarget ? '☀ Dzień' : '☾ Wieczór';
+    $('duskBtn').innerHTML = timeLabel(this.eveningTarget > 0.5);
     $('final').classList.add('show');
   }
   private foundSecret() {
@@ -297,7 +297,7 @@ export class Session {
   }
   toggleEvening() {
     this.eveningTarget = this.eveningTarget > 0.5 ? 0 : 1;
-    $('duskBtn').textContent = this.eveningTarget ? '☀ Dzień' : '☾ Wieczór';
+    $('duskBtn').innerHTML = timeLabel(this.eveningTarget > 0.5);
   }
 
   // ── dev / auto
