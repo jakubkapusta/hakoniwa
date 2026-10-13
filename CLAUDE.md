@@ -42,6 +42,7 @@ Anime / Ghibli look, procedural only. Flat tones with crisp edges, not noise: `f
 - **Never put a light exactly on a surface** (distance 0 → NaN on mobile GPUs → white flashes over the whole screen through bloom; the bus headlight did this). `InkPass` scrubs NaN/Inf as a safety net.
 
 - Emissive materials: intensity × the glow map must stay modest or bloom turns them into white blobs (the vending machine needed ~0.55). Tune at evening.
+- Dragging listens on `window` (move/up/cancel by `pointerId`), not on the card: on the owner's phone the release sometimes never reached the (hidden) card, the drag stayed open and the piece hung in the air with everything blocked (2026-10-13). A new touch or window blur finishes a drag whose release got lost. Tweens and the scene's `update` hook are wrapped in try/catch so one error can't freeze every frame.
 - Hidden UI must not catch taps: `.screen` uses `visibility: hidden` when not `.show`.
 - Something in the back is easily hidden by things in front from the default camera (the chef had to move beside the cart; the bus can't park in front of the shelter, so it comes and goes).
 - Vehicles (bus, train) are clipped to the base with `clippingPlanes` (`renderer.localClippingEnabled = true`); the planes are world-space, so they're re-derived from `ctx.scene.matrixWorld` every frame (the shelf shows scaled copies).

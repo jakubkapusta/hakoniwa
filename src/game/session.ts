@@ -12,7 +12,7 @@ import { $, toast } from '../ui/dom';
 
 const V3 = THREE.Vector3;
 interface Info { center: THREE.Vector3; size: THREE.Vector3; radius: number; offset: THREE.Vector3 }
-interface Drag { id: string; card: HTMLElement; x0: number; y0: number; started: boolean; near: boolean; obj?: Foldable }
+interface Drag { id: string; card: HTMLElement; pid: number; x0: number; y0: number; started: boolean; near: boolean; obj?: Foldable }
 interface Tween { t: number; dur: number; fn: (k: number) => void; e: (k: number) => number; res: () => void }
 
 const thumbs = new Map<string, string>();
@@ -62,6 +62,9 @@ export class Session {
     $('hint').style.opacity = save.hinted ? '0' : '1';
 
     this.bindCanvasTap();
+    // the drag follows the pointer on the whole window: on phones the card (hidden while dragging) doesn't reliably get the release
+    addEventListener('pointermove', this.onMove); addEventListener('pointerup', this.onUp); addEventListener('pointercancel', this.onUp);
+    addEventListener('pointerdown', this.onAnyDown, true); addEventListener('blur', this.onBlur);
   }
 
   // ── setup helpers
@@ -132,35 +135,37 @@ export class Session {
   // ── input
   private bindCard(card: HTMLElement, id: string) {
     card.addEventListener('pointerdown', (e) => {
-      if (this.auto || this.ctx.done || this.drag) return;
+      if (this.auto || this.ctx.done || this.drag || this.inflight.has(id)) return;
       audio();
-      this.drag = { id, card, x0: e.clientX, y0: e.clientY, started: false, near: false };
+      this.drag = { id, card, pid: e.pointerId, x0: e.clientX, y0: e.clientY, started: false, near: false };
       try { card.setPointerCapture(e.pointerId); } catch { /* synthetic events in tests */ }
     });
-    card.addEventListener('pointermove', (e) => {
-      const d = this.drag;
-      if (!d || d.card !== card) return;
-      if (!d.started && Math.hypot(e.clientX - d.x0, e.clientY - d.y0) > 8) {
-        d.started = true; card.classList.add('gone'); this.stage.controls.enabled = false;
-        const o = this.instantiate(id); o.userData.setFold?.(0); this.stage.scene.add(o);
-        d.obj = o; this.inflight.add(id); sfx.pick();
-      }
-      if (d.started) this.moveDrag(e);
-    });
-    const up = () => {
-      const d = this.drag;
-      if (!d || d.card !== card) return;
-      this.drag = null; this.stage.controls.enabled = true;
-      if (!d.started) { this.nudge(card); return; }
-      const o = d.obj!;
-      if (d.near) { this.place(id, o); return; }
-      const s0 = o.scale.x;
-      sfx.back();
-      this.anim(0.25, (k) => o.scale.setScalar(s0 * (1 - k) + 0.001)).then(() => { this.stage.scene.remove(o); this.inflight.delete(id); });
-      card.classList.remove('gone');
-    };
-    card.addEventListener('pointerup', up);
-    card.addEventListener('pointercancel', up);
+  }
+  private onMove = (e: PointerEvent) => {
+    const d = this.drag;
+    if (!d || e.pointerId !== d.pid) return;
+    if (!d.started && Math.hypot(e.clientX - d.x0, e.clientY - d.y0) > 8) {
+      d.started = true; d.card.classList.add('gone'); this.stage.controls.enabled = false;
+      const o = this.instantiate(d.id); o.userData.setFold?.(0); this.stage.scene.add(o);
+      d.obj = o; this.inflight.add(d.id); sfx.pick();
+    }
+    if (d.started) this.moveDrag(e);
+  };
+  private onUp = (e: PointerEvent) => { if (this.drag && e.pointerId === this.drag.pid) this.release(); };
+  /** A new touch while a drag is still open means its release got lost: finish it first. */
+  private onAnyDown = (e: PointerEvent) => { if (this.drag && e.pointerId !== this.drag.pid) this.release(); };
+  private onBlur = () => { if (this.drag) this.release(); };
+  private release() {
+    const d = this.drag;
+    if (!d) return;
+    this.drag = null; this.stage.controls.enabled = true;
+    if (!d.started) { this.nudge(d.card); return; }
+    const o = d.obj!;
+    if (d.near) { this.place(d.id, o); return; }
+    const s0 = o.scale.x;
+    sfx.back();
+    this.anim(0.25, (k) => o.scale.setScalar(s0 * (1 - k) + 0.001)).then(() => { this.stage.scene.remove(o); this.inflight.delete(d.id); });
+    d.card.classList.remove('gone');
   }
   private ray = new THREE.Raycaster();
   /** A tap only wiggles the card: pieces have to be carried onto the scene. */
@@ -310,7 +315,9 @@ export class Session {
   update(dt: number, t: number) {
     for (let i = this.tweens.length - 1; i >= 0; i--) {
       const w = this.tweens[i]; w.t += dt;
-      const k = Math.min(1, w.t / w.dur); w.fn(w.e(k));
+      let k = Math.min(1, w.t / w.dur);
+      // a failing animation must not stop every frame after it: drop it and let its piece land
+      try { w.fn(w.e(k)); } catch (err) { console.error(err); k = 1; }
       if (k >= 1) { this.tweens.splice(i, 1); w.res(); }
     }
     const c = this.ctx;
@@ -325,12 +332,14 @@ export class Session {
     });
     c.placed.forEach((o) => (o as Foldable).userData.tick?.(t, c.evening));
     this.secretObj?.userData.tick?.(t, c.evening);
-    this.hooks.update?.(dt, t, c);
+    try { this.hooks.update?.(dt, t, c); } catch (err) { console.error(err); }
     this.fx.update(dt);
     this.ambience.update(c.evening);
   }
 
   close() {
+    removeEventListener('pointermove', this.onMove); removeEventListener('pointerup', this.onUp); removeEventListener('pointercancel', this.onUp);
+    removeEventListener('pointerdown', this.onAnyDown, true); removeEventListener('blur', this.onBlur);
     this.gen++; this.auto = false; this.drag = null; this.tweens.length = 0;
     this.stage.controls.enabled = true; this.stage.controls.autoRotate = false;
     this.fx.clear(); this.ambience.clear();
