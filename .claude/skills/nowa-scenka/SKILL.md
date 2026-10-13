@@ -11,7 +11,7 @@ A scene is one file in `src/scenes/` exporting a `SceneDef` (see `src/scenes/typ
 
 - **Place and season** — a cosy, everyday Japanese spot; each scene has its own season and light (spring = Yatai, rainy season = Przystanek, autumn = Inari; free: winter, summer festival, seaside, tea garden…). Own designs, nothing from Ghibli films.
 - **Palette** — 4–5 main colours; day and evening sky palettes.
-- **Steps (4–6)** back to front, like a kit manual: backdrop → main building → structure/roof → props → life (people, animals). **12–20 pieces**, 2–4 per step. At least one fold-up piece (`foldBox`, `wallNet`, `gableRoof`) per scene — folding is the signature moment.
+- **Steps (7–8)** back to front, like a kit manual: backdrop → water/ground → main building (floor, walls, roof, details) → paths → garden → props → people → animals. **About 30 pieces** (owner, 2026-10-13: a dozen-odd go too fast), 3–5 per step (5 is the most the tray fits on a phone). Build the main building from several pieces (floor, folding walls, roof, ridge, veranda). At least two fold-up pieces (`foldBox`, `wallNet`, `gableRoof`) per scene — folding is the signature moment. `chaya.ts` and `satoyama.ts` are the templates for this size.
 - **Finale** — what comes alive at dusk: lights (emissive + point lights), one moving thing (bus, wisps, steam…), one particle mood (petals, leaves, rain, fireflies, snow).
 - **Secret** — a small creature or object that appears after the finale, hidden from the default camera (behind something), findable by orbiting.
 - **Ambience** — which `Layer` each piece switches on (`src/audio/audio.ts`; add a layer there if needed — synthesized only).
@@ -20,7 +20,7 @@ A scene is one file in `src/scenes/` exporting a `SceneDef` (see `src/scenes/typ
 
 - World: base 6.4 × 5 (x ±3.2, z ±2.5), top at y = 0, camera from the front (+z). Backdrop cutouts at z ≈ −2.4, wide ±3.1.
 - Keys: every `memo`/`cutoutAsset`/`boardMat` key prefixed with the scene id (`const K = (s) => 'myscene:' + s`).
-- Cutouts: outline in world units, **y up**; the painter gets the same coordinates. Characters and props keep the default ink contour; backgrounds pass `ink: 0`.
+- Cutouts: outline in world units, **y up**; the painter gets the same coordinates. Characters and props keep the default ink contour; backgrounds pass `ink: 0`. Thin shapes (grass blades, stems) read as dark sticks with ink — give them `ink: 0` or a solid clump outline. Fill the canopy colour before `foliage` so no gaps stay transparent. People: `figure`, `seatedOutline`, `face` from `src/kit/people.ts`.
 - Boards (`boardMat`): world units, **y down** (canvas top = hinge / back edge).
 - Paint with the anime brushes in `src/core/paint.ts`: `foliage`, `meadow`/`tufts`/`flowers`, `wash`, `blob`; flat tones with crisp edges, light from the upper left, little noise.
 - Pieces: `{ name (Polish, short), pos, rotY?, build, sound? }`. Anything alive gets `userData.tick(t, evening)`.
@@ -37,7 +37,7 @@ A scene is one file in `src/scenes/` exporting a `SceneDef` (see `src/scenes/typ
 ## 4. Verify (do all of it)
 
 1. `npx tsc --noEmit`, `npm run build`.
-2. Dev server (`hakoniwa` in `~/code/.claude/launch.json`), open `http://localhost:5221/#auto`, `__hk.open('<id>')`, press ▶ Auto; watch every step and the finale.
+2. Dev server (`hakoniwa` in `~/code/.claude/launch.json`). The pane is shared with the owner, so open your own background tab (`tabs_create`) at `http://localhost:5221/#auto`; frames don't run there, drive them with `await __hk.step(sec)`. Fastest: write `localStorage['hakoniwa.v1']` with all pieces but the last placed, reload, `__hk.open('<id>')`, `__hk.auto(); await __hk.step(10)` for the finale.
 3. Screenshot the finished scene by day and by evening (`__hk.session.toggleEvening()`), desktop and 375×812.
 4. Drag one piece by hand (pointer events on a `.card`) — it must follow the finger and snap at its outline.
 5. Find the secret by tapping it after the finale.

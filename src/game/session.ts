@@ -108,6 +108,7 @@ export class Session {
     $('dots').innerHTML = this.def.steps.map((_, k) => `<i class="${k < i ? 'done' : k === i ? 'on' : ''}"></i>`).join('');
     $('step').style.opacity = '1';
     const tray = $('tray'); tray.innerHTML = '';
+    tray.style.setProperty('--n', String(Math.max(4, st.pieces.filter((id) => !this.ctx.placed.has(id)).length)));
     st.pieces.forEach((id, k) => {
       if (this.ctx.placed.has(id)) return;
       this.makeGhost(id);

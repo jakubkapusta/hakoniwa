@@ -55,15 +55,18 @@ $('againBtn').onclick = () => {
 if (location.hash.includes('auto')) { $('autoBtn').hidden = false; $('autoBtn').onclick = () => session?.runAuto(); }
 
 let last = performance.now(), time = 0;
-stage.renderer.setAnimationLoop((now) => {
-  const dt = Math.min((now - last) / 1000, 0.05); last = now; time += dt;
+function frame(dt: number) {
+  time += dt;
   if (session) session.update(dt, time); else shelf.update(dt, time);
   stage.render(dt);
   document.body.classList.toggle('evening', (session ? session.ctx.evening : shelf.evening) > 0.5);
-});
+}
+stage.renderer.setAnimationLoop((now) => { const dt = Math.min((now - last) / 1000, 0.05); last = now; frame(dt); });
 
 showShelf(false);
-const dev = { stage, get session() { return session; }, open: (id: string) => { const d = SCENES.find((s) => s.id === id); if (d) openScene(d); }, auto: () => session?.runAuto() };
+const dev = { stage, get session() { return session; }, open: (id: string) => { const d = SCENES.find((s) => s.id === id); if (d) openScene(d); }, auto: () => session?.runAuto(),
+  /** Advance the game by `sec` seconds at once (tests in a background tab, where animation frames don't run). */
+  step: async (sec: number, fps = 30) => { for (let i = 0; i < sec * fps; i++) { frame(1 / fps); for (let k = 0; k < 6; k++) await null; } } };
 (window as unknown as { __hk: typeof dev }).__hk = dev;
 
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {

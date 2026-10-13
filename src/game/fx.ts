@@ -74,9 +74,9 @@ export class Fx {
     }, 0.12 * size);
     return p;
   }
-  petal(at: THREE.Vector3) {
+  petal(at: THREE.Vector3, color = '#ffffff') {
     const spin = rand(-3, 3);
-    const p = this.sprite(PETAL, '#ffffff', at, rand(7, 11), (f, dt, k) => {
+    const p = this.sprite(PETAL, color, at, rand(7, 11), (f, dt, k) => {
       if (f.o.position.y > 0.03) {
         f.o.position.addScaledVector(f.v, dt); f.o.position.x += Math.sin(f.age * 2 + f.seed) * dt * 0.15;
         (f.o.material as THREE.SpriteMaterial).rotation += dt * spin;

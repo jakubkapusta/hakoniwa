@@ -44,11 +44,12 @@ button { font: inherit; font-weight: 800; font-size: 13px; color: var(--ink); bo
 #hint { position: fixed; left: 16px; right: 16px; bottom: calc(env(safe-area-inset-bottom) + 130px); text-align: center; font-size: 13px; font-weight: 800;
   text-shadow: 0 0 10px rgba(255,255,255,.95), 0 0 3px rgba(255,255,255,.9); pointer-events: none; transition: opacity .6s; }
 #tray { position: fixed; left: 0; right: 0; bottom: 0; padding: 0 16px calc(env(safe-area-inset-bottom) + 16px); display: flex; justify-content: center; gap: 10px; pointer-events: none; }
-.card { pointer-events: auto; touch-action: none; width: 78px; padding: 6px 4px 7px; background: var(--paper); border-radius: 14px;
+.card { pointer-events: auto; touch-action: none; width: min(78px, calc((100vw - 32px - (var(--n, 4) - 1) * 10px) / var(--n, 4))); padding: 6px 4px 7px; background: var(--paper); border-radius: 14px;
   box-shadow: 0 6px 18px rgba(70,50,30,.2), inset 0 0 0 1px rgba(160,130,90,.2); text-align: center; cursor: grab;
   transition: transform .3s cubic-bezier(.2,1.4,.4,1), opacity .25s; animation: cardIn .5s cubic-bezier(.2,1.4,.4,1) backwards; }
-.card img { width: 66px; height: 66px; display: block; margin: 0 auto 2px; pointer-events: none; -webkit-user-drag: none; }
-.card span { font-size: 12px; font-weight: 800; color: var(--ink2); }
+.card img { width: 100%; max-width: 66px; aspect-ratio: 1; height: auto; display: block; margin: 0 auto 2px; pointer-events: none; -webkit-user-drag: none; }
+.card span { font-size: 12px; font-weight: 800; color: var(--ink2); display: block; line-height: 1.15; overflow-wrap: anywhere; }
+@media (max-width: 400px) { .card span { font-size: 11px; } }
 .card:active { transform: scale(.95); }
 .card.nudge { animation: nudge .45s; }
 @keyframes nudge { 20% { transform: translateY(-10px) rotate(-4deg); } 45% { transform: translateY(-4px) rotate(3deg); } 70% { transform: translateY(-2px) rotate(-1.5deg); } }
